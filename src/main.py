@@ -1,23 +1,25 @@
 from threading import Thread
 from multiprocessing import Pool, Queue, Process
-from lane_detector import *
+from lane_detector import LaneDetector
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from car import CarDetector
 
-# def w(i):
-#     time.sleep(i)
+
+def simple_on_danger(*x):
+    print("Danger")
 
 
 class Program:
     def __init__(
         self,
         lane_d: LaneDetector,
-        car_d,
+        car_d: CarDetector,
         use_async=False,
         frame_ratio=2,
-        on_danger=lambda *x: print("Danger"),
+        on_danger=simple_on_danger,
     ) -> None:
         self.lane_d = lane_d
         self.car_d = car_d
@@ -44,51 +46,56 @@ class Program:
         while True:
             self.on, frame = video.read()
             if self.on:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
                 # s = time.time()
                 if self.use_async:
-                    a = pool.apply_async(self.tick, args=(frame,))
-                    # b = pool.apply_async(self.detect_cars, args=(frame,))
-                    frame = a.get()
-                    # b.get()
+                    lane = pool.apply_async(self.tick, args=(frame.copy(),))
+                    car = pool.apply_async(self.detect_cars,
+                                           args=(frame.copy(),))
+                    self.lane_d = lane.get()
+                    self.car_d = car.get()
                 else:
-                    frame = self.tick(frame)
-                    # self.detect_cars(frame)
+                    self.tick(frame)
+                    self.detect_cars(frame)
                 # print(1/(time.time()-s))
 
                 self.update_fps(frame)
+                frame = self.draw_main_frame(frame)
                 self.lane_d.show_window("Main window", frame, self.frame_ratio)
-
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     self.stop()
                     break
             else:
                 self.stop()
                 break
-    # cc = cv2.imread("cc.png")
-    # car_cascade_src = 'cars.xml'
-    # car_cascade = cv2.CascadeClassifier(car_cascade_src)
+
+    def detect_cars(self, frame):
+        print("detect_cars")
+        self.car_d.detect(frame)
+        return self.car_d
 
     # def detect_cars(self, frame):
-    #     for a in range(5):
-    #         cars = self.car_cascade.detectMultiScale(self.cc, 1.1, 1)
-    #         for (x, y, w, h) in cars:
-    #             cv2.rectangle(self.cc, (x, y), (x+w, y+h), (255, 0, 0), 2)
-    #     return frame
+    #
 
     def tick(self, frame):
-        # print("t")
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = self.lane_d.pipeline(frame)
+        print("ticking")
+        self.lane_d.pipeline(frame)
         is_in_lane = self.lane_d.is_in_lane()
         self.fps = 1
         self.lane_d.put_text(
             frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
+        return self.lane_d
+
+    def draw_main_frame(self, frame):
+        frame = self.lane_d.draw(frame)
+        frame = self.car_d.draw(frame)
         return frame
 
 
-if __name__ == "__main__":
-    # p.start()
-    # p.run()
+def test():
+    F = 2800
+    FOCAL_LENGTH = 4.74
     config = {
         "polygon_height": 180,
         "lane_center1": 720,
@@ -96,21 +103,33 @@ if __name__ == "__main__":
         "lane_center2": 700,
         "lane_width2": 380*2,
     }
-
-    src = "./rsrc/video2.mp4"
+    src = "../rsrc/video2.mp4"
+    # p.start()
+    # p.run()
     video = cv2.VideoCapture(src)
     ld = LaneDetector(
         (720, 1280),
         use_bitwise=True,
         draw_roi=True,
-        show_perp_lines=False,
+        show_perp_lines=True,
         color_threshold=180,
         window_size_ratio=2,
-        use_canny=False,
+        use_canny=True,
         canny_thresholds=(70, 100)
     )
+
+    def danger(cause):
+        print("Danger", cause)
+    car_d = CarDetector(F, FOCAL_LENGTH)
     ld.init_polygon(config)
-    p = Program(ld, None, use_async=True)
+
+    p = Program(ld, car_d, use_async=True, frame_ratio=2)
 
     pool = Pool(6)
-    p.run(pool)
+    p.run(video, pool)
+    pool.close()
+    pool.join()
+
+
+if __name__ == "__main__":
+    test()

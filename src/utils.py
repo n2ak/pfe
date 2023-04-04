@@ -173,6 +173,26 @@ def fit_poly(image, left_indices, right_indices):
     return left_fitx, right_fitx, ys
 
 
+def get_object_distance(
+    f,
+    focal_length,
+    object_size_in_image,
+    object_size_in_real_world,
+    ratio=1,
+):
+    """
+    from : https://stackoverflow.com/questions/14038002/opencv-how-to-calculate-distance-between-camera-and-object-using-image
+    - object_real_world in "mm"
+    - object_size_in_image in "px"
+    - object_size_in_real_world in "mm"
+    """
+    pixels_per_mm = f / focal_length
+    pixels_per_mm = round(pixels_per_mm / ratio)
+    object_image_sensor = object_size_in_image / pixels_per_mm
+    distance = object_size_in_real_world * focal_length / object_image_sensor
+    return distance  # in "mm"
+
+
 def draw_curvatures(image, xs, ys, figsize=(10, 10), cmap=None, linewidth=2):
     plt.figure(figsize=figsize)
     plt.imshow(image, cmap)
@@ -241,3 +261,13 @@ def threshold(image, thresh=100, maxval=255, type=cv2.THRESH_BINARY):
 
 def canny(image, t1, t2):
     return cv2.Canny(image, t1, t2)
+
+
+def show_window(name, image, ratio=1):
+    size = int(image.shape[1]//ratio), int(image.shape[0]//ratio)
+    image = cv2.resize(image, size)
+    cv2.imshow(name, image)
+
+
+def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
+    cv2.putText(frame, text, org, font, scale, color, **kwargs)

@@ -11,7 +11,6 @@ SHOW_WINDOWS = True
 
 
 class LaneDetector:
-
     def __init__(
         self,
         img_shape,
@@ -52,38 +51,42 @@ class LaneDetector:
     def trackbar(self, title: str, window: str, on_change):
         return cv2.createTrackbar(title, window, 19, 100, on_change)
 
-    def pipeline(self, frame):
-        # frame = cv2.resize(frame, (self.W, self.H))
-        original_image = frame.copy()
-        result = warp_perspective(frame, (self.H, self.W), self.polygon)
+    def draw(self, frame):
+        # image_warped, xs, ys = info
+        import time
+        # time.(.1)
+        # result = draw_lane_zone(np.zeros_like(
+        #     self.image_warped) if self.use_bitwise else self.image_warped, self.xs, self.ys, 50)
+        if self.draw_roi:
+            result = draw_polygon(frame, self.polygon[0])
+        # print("warped", dir(self))
 
-        image_warped = result.copy()
+        result = draw_lane_zone(
+            np.zeros_like(
+                self.image_warped) if self.use_bitwise else self.image_warped,
+            self.xs,
+            self.ys,
+            50
+        )
+        result = warp_perspective(
+            (result), (self.H, self.W), self.polygon, flip=True)
+        result = combine(result, frame, use_bitwise=self.use_bitwise)
+        return result
+
+    def pipeline(self, frame):
+        result = warp_perspective(frame, (self.H, self.W), self.polygon)
+        self.image_warped = None
+        self.image_warped = result.copy()
         if not self.use_canny:
             result = threshold(result, thresh=self.color_threshold)
             result = cv2.cvtColor(result, cv2.COLOR_RGB2GRAY)
         else:
             result = canny(
                 result, self.canny_thresholds[0], self.canny_thresholds[1])
-
         if self.show_perp_lines:
             self.show_window("show_perp_lines", result, self.window_size_ratio)
-
-        # show_img(result, cmap="gray")
         # hist = hi stogram(result//255)
-
-        xs, ys = get_curvatures(result, RECENTER_MINPIX)
-        result = draw_lane_zone(np.zeros_like(
-            image_warped) if self.use_bitwise else image_warped, xs, ys, 50)
-        # pass
-        result = warp_perspective(
-            (result), (self.H, self.W), self.polygon, flip=True)
-
-        result = combine(result, original_image, use_bitwise=self.use_bitwise)
-
-        if self.draw_roi:
-            result = draw_polygon(result, self.polygon[0])
-
-        return result
+        self.xs, self.ys = get_curvatures(result, RECENTER_MINPIX)
 
     def is_in_lane(self):
         return True
