@@ -1,4 +1,4 @@
-from utils import get_object_distance
+from utils import get_object_distance, scale
 import cv2
 
 
@@ -22,7 +22,7 @@ class CarDetector:
         return distance < self.CAR_MIN_DISTANCE * 1000
 
     def detect_cars_in_front(self, frame):
-        frame = cv2.resize(self.cc, (frame.shape[1], frame.shape[0]))  # TODO
+        frame = scale(self.cc, size=frame.shape[:2][::-1])  # TODO
         return self.car_cascade.detectMultiScale(frame, 1.1, 1)
 
     def is_car_in_front(self, car):

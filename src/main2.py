@@ -4,14 +4,12 @@ from car import CarDetector
 import cv2
 import numpy as np
 import time
-from workers import LaneWorker, CarWorker, DrawWorker, lane_detect_one_frame, car_detect_one_frame, draw_main_window
+from workers import *
+# from workers import LaneWorker, CarWorker, DrawWorker, lane_detect_one_frame, car_detect_one_frame, draw_main_window
 
 
 def simple_on_danger(*x):
     print("Danger")
-
-
-# class WindowWorker():
 
 
 class Program:
@@ -22,7 +20,8 @@ class Program:
         use_async=False,
         frame_ratio=2,
         on_danger=simple_on_danger,
-        draw=True
+        draw=True,
+        draw_lines=True,
     ) -> None:
         self.prev_time = time.time()-1
         self.use_async = use_async
@@ -31,6 +30,8 @@ class Program:
         self.lane_d = lane_d
         self.car_d = car_d
         self.draw = draw
+        self.draw_lines = draw_lines
+        self.window_names = ["Main"]
 
         if use_async:
             self.init_workers()
@@ -40,15 +41,17 @@ class Program:
     def init_workers(self):
         self.lane_worker = LaneWorker(self.lane_d)
         self.car_worker = CarWorker(self.car_d)
+        self.network = WebsocketWorker("0.0.0.0", 9999)
         if self.draw:
-            self.draw_worker = DrawWorker(self.frame_ratio)
+            self.window_names.append("Perp")
+            self.draw_worker = DrawWorker(self.frame_ratio, self.window_names)
 
     def start(self):
         self.lane_worker.start()
         self.car_worker.start()
+        self.network.start()
         if self.draw:
             self.draw_worker.start()
-
     fps_ = []
 
     def stop(self):
@@ -57,6 +60,7 @@ class Program:
             print("Stopping all workers")
             self.lane_worker.stop()
             self.car_worker.stop()
+            self.network.stop()
             if self.draw:
                 self.draw_worker.stop()
 
@@ -67,12 +71,16 @@ class Program:
         c_w.q.put(("detect", frame))
 
         l_w.q.put(("draw", frame))
-        frame = l_w.q2.get()
+        frame, lines = l_w.q2.get()
         c_w.q.put(("draw", frame))
         frame = c_w.q2.get()
 
+        self.network.q.put(frame)
         if self.draw:
-            self.draw_worker.q.put(frame)
+            frames = [frame,]
+            if self.draw_lines:
+                frames.append(lines)
+            self.draw_worker.q.put(frames)
             got = self.draw_worker.q2.get()
             return got is None
         return False
@@ -85,6 +93,7 @@ class Program:
             frame = self.car_d.draw(frame)
             self.update_fps(frame)
             draw_main_window(frame, self.frame_ratio)
+
             return bool(cv2.waitKey(1) & 0xFF == ord('q'))
         return False
 
@@ -98,6 +107,7 @@ class Program:
                     break
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if self.runner_func(frame):
+                    self.network.q.put(None)
                     break
         except KeyboardInterrupt:
             pass
@@ -131,10 +141,10 @@ def test():
         (720, 1280),
         use_bitwise=True,
         draw_roi=True,
-        show_perp_lines=True,
+        show_perp_lines=False,
         color_threshold=180,
         window_size_ratio=2,
-        use_canny=True,
+        use_canny=False,
         canny_thresholds=(70, 100)
     )
     car_d = CarDetector(F, FOCAL_LENGTH)
@@ -142,7 +152,7 @@ def test():
     p = Program(
         ld,
         car_d,
-        use_async=False,
+        use_async=True,
         frame_ratio=2,
         draw=True
     )

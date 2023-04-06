@@ -83,8 +83,9 @@ class LaneDetector:
         else:
             result = canny(
                 result, self.canny_thresholds[0], self.canny_thresholds[1])
+        self.lines = result.copy()
         if self.show_perp_lines:
-            self.show_window("show_perp_lines", result, self.window_size_ratio)
+            show_window("show_perp_lines", result, self.window_size_ratio)
         # hist = hi stogram(result//255)
         self.xs, self.ys = get_curvatures(result, RECENTER_MINPIX)
 

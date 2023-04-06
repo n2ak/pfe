@@ -31,6 +31,46 @@ def lines_HTP(edges_img, threshold=100, thickness=2):
     return lines, ret_img
 
 
+def draw_line_to_object(im, object_box, color=(0, 255, 0)):
+    h, w = im.shape[:2]
+    x, y, ow, oh = object_box
+    p1, p2 = (w//2, h), (x+ow//2, y+oh)
+    cv2.circle(im, p2, 30, color, 10)
+    cv2.arrowedLine(im, p1, p2, color, 40)
+    return im
+
+
+def draw_distance_to_object(
+    im,
+    object_box,
+    distance,
+    line_color=(0, 255, 0),
+    text_color=(255, 0, 0),
+    back_color=(0, 0, 0),
+    font=cv2.FONT_HERSHEY_COMPLEX,
+    unit="cm",
+    rect_width=700,
+    rect_hieght=200
+):
+    h, w = im.shape[:2]
+    x, y, ow, oh = object_box
+    p1, p2 = (w//2, h), (x+ow//2, y+oh)
+    text_x, text_y = ((p1[0]+p2[0])//2 + 100, (p1[1]+p2[1])//2)
+    # cv2.circle(im, (text_x, text_y),100,(255,0,0),10)
+    rect_x, rect_y, rect_w, rect_h, offset = text_x, text_y, rect_width, rect_hieght, 50
+    im = draw_line_to_object(im, object_box, color=line_color)
+    cv2.rectangle(
+        im,
+        (max(0, text_x-20), max(0, text_y - rect_h//2-offset)),
+        (text_x + rect_w+20, max(0, text_y + rect_h//2-offset)),
+        back_color,
+        -1
+    )
+    cv2.putText(im, f"{distance:.1f} {unit}",
+                (text_x, text_y), font, 5, text_color, 10)
+    return im
+
+
 def lines_HT(edges_img, threshold):
     ret_img = np.zeros_like(edges_img)
     lines = cv2.HoughLines(edges_img, 1, np.pi/180, threshold)
@@ -187,7 +227,9 @@ def get_object_distance(
     - object_size_in_real_world in "mm"
     """
     pixels_per_mm = f / focal_length
+    print(pixels_per_mm)
     pixels_per_mm = round(pixels_per_mm / ratio)
+    print(pixels_per_mm)
     object_image_sensor = object_size_in_image / pixels_per_mm
     distance = object_size_in_real_world * focal_length / object_image_sensor
     return distance  # in "mm"
@@ -201,6 +243,14 @@ def draw_curvatures(image, xs, ys, figsize=(10, 10), cmap=None, linewidth=2):
     plt.plot(xs[1], ys, color='red', linewidth=linewidth)
     plt.show()
     return image
+
+
+def load_f_from_file(filepath="../cameraMatrix.npy"):
+    matrix = np.load(filepath)
+    print("found matrix:\n", matrix)
+    f_x, f_y, _ = matrix.diagonal()
+    f = np.mean([f_x, f_y])
+    return f
 
 
 def combine(image, original, use_bitwise=True):
@@ -263,9 +313,14 @@ def canny(image, t1, t2):
     return cv2.Canny(image, t1, t2)
 
 
+def scale(frame, ratio=1, size=None):
+    if size is None:
+        size = (frame.shape[1]//ratio, frame.shape[0]//ratio)
+    return cv2.resize(frame, size)
+
+
 def show_window(name, image, ratio=1):
-    size = int(image.shape[1]//ratio), int(image.shape[0]//ratio)
-    image = cv2.resize(image, size)
+    image = scale(image, ratio)
     cv2.imshow(name, image)
 
 

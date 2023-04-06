@@ -2,18 +2,19 @@ import numpy as np
 import cv2 as cv
 import glob
 import pickle
-
+from ..src.utils import scale
 
 ################ FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #############################
 
 
 def calibrate(
-    size_of_chessboard_squares_mm,
     images_path,
     chessboardSize,
     frameSize=None,
+    size_of_chessboard_squares_mm=20,
     criteria=(cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001),
-    show_chessboard=True
+    show_chessboard=False,
+    ratio=2,
 ):
 
     objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
@@ -25,18 +26,20 @@ def calibrate(
     objpoints = []  # 3d point in real world space
     imgpoints = []  # 2d points in image plane.
     images = glob.glob(images_path)
-    for image in images:
+    print(f"Found {len(images)} images")
+    import tqdm
+    for image in tqdm.tqdm(images):
         img = cv.imread(image)
         if frameSize is None:
             h, w = img.shape[:2]
             frameSize = w, h
 
-        print("Image shape:", img.shape)
+        # print("Image shape:", img.shape)
         gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
         # Find the chess board corners
         ret, corners = cv.findChessboardCorners(gray, chessboardSize, None)
-
+        print("Ret", ret)
         # If found, add object points, image points (after refining them)
         if ret == True:
 
@@ -48,8 +51,7 @@ def calibrate(
             # Draw and display the corners
             if show_chessboard:
                 cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
-                cv.imshow('img', cv.resize(
-                    img, (img.shape[1]//2, img.shape[0]//2)))
+                cv.imshow('img', scale(img, ratio))
 
                 cv.waitKey()
     ret = cv.calibrateCamera(objpoints, imgpoints, frameSize, None, None)
@@ -58,17 +60,18 @@ def calibrate(
 
 
 if __name__ == "__main__":
-    images_path = 'calibration/*.png'
+    images_path = 'Cv/*.jpg'
     chessboardSize = (9, 6)
     frameSize = (640, 480)
     size_of_chessboard_squares_mm = 20
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 
     ret, cameraMatrix, dist, rvecs, tvecs = calibrate(
-        size_of_chessboard_squares_mm,
         images_path,
         chessboardSize,
+        size_of_chessboard_squares_mm=size_of_chessboard_squares_mm,
         frameSize=frameSize,
+        show_chessboard=False,
     )
     np.save("cameraMatrix.npy", cameraMatrix)
     print(cameraMatrix.shape)

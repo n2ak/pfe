@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 from car import CarDetector
+from utils import show_window
 
 
 def simple_on_danger(*x):
@@ -62,7 +63,7 @@ class Program:
 
                 self.update_fps(frame)
                 frame = self.draw_main_frame(frame)
-                self.lane_d.show_window("Main window", frame, self.frame_ratio)
+                show_window("Main window", frame, self.frame_ratio)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     self.stop()
                     break
