@@ -1,17 +1,136 @@
-import cv2
-import matplotlib.pyplot as plt
+import pickle
+import glob
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+cv = cv2
 
 
 def circle_at(ee, p): cv2.circle(ee, p, 30, (255, 255, 255))
 
 
+def getOptimalNewCameraMatrix(shape, cameraMatrix, distortion, alpha=1):
+    h,  w = shape
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(
+        cameraMatrix, distortion, (w, h), alpha, (w, h))
+    return newcameramtx, roi
+
+
+def undistort(img, cameraMatrix, distortion, alpha=1, crop=False, use_optimal=True):
+    h,  w = img.shape[:2]
+    kwargs = {}
+    if use_optimal:
+        newcameramtx, roi = getOptimalNewCameraMatrix(
+            (h,  w), cameraMatrix, distortion)
+        kwargs["newCameraMatrix"] = newcameramtx
+    dst = cv2.undistort(img, cameraMatrix, distortion, **kwargs)
+    if use_optimal and crop:
+        x, y, w, h = roi
+        dst = dst[y:y+h, x:x+w]
+    return dst
+
+
 def show_img(img, figsize=None, **kwargs):
-    figsize = figsize or (15, 15)
+    figsize = figsize or (5, 5)
     plt.figure(figsize=figsize)
     plt.imshow(img, **kwargs)
-    # plt.axis('off')
+    plt.axis('off')
     plt.show()
+
+
+def grad(im, ddepth, delta, scale, vert=False):
+    dx, dy = 1, 0
+    if vert:
+        dx, dy = dy, dx
+    grad_x = cv.Sobel(im, ddepth, dx, dy, ksize=3, scale=scale,
+                      delta=delta, borderType=cv.BORDER_DEFAULT)
+    return cv.convertScaleAbs(grad_x)
+
+
+def sobel(image, scale=None, delta=None, ddepth=None, both=False):
+    scale = scale or 1
+    delta = delta or 0
+    ddepth = ddepth or cv.CV_16S
+    print(scale, delta, ddepth)
+    src = image
+    # Check if image is loaded fine
+    src = cv.GaussianBlur(src, (3, 3), 0)
+    gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+    gray_x = grad(gray, ddepth, delta, scale)
+    if not both:
+        return gray_x
+    gray_y = grad(gray, ddepth, delta, scale, True)
+    out = cv.addWeighted(gray_x, 0.5, gray_y, 0.5, 0)
+    return out
+
+
+def calibrate(
+    images_path,
+    chessboardSize,
+    frameSize=None,
+    size_of_chessboard_squares_mm=20,
+    criteria=(cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001),
+    show_chessboard=False,
+    window_ratio=2,
+):
+
+    objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
+    objp[:, :2] = np.mgrid[0:chessboardSize[0],
+                           0:chessboardSize[1]].T.reshape(-1, 2)
+
+    objp = objp * size_of_chessboard_squares_mm
+
+    objpoints = []  # 3d point in real world space
+    imgpoints = []  # 2d points in image plane.
+    images = glob.glob(images_path)
+    print(f"Found {len(images)} images")
+    import tqdm
+    for image in tqdm.tqdm(images):
+        img = cv.imread(image)
+        if frameSize is None:
+            h, w = img.shape[:2]
+            frameSize = w, h
+
+        # print("Image shape:", img.shape)
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+        # Find the chess board corners
+        ret, corners = cv.findChessboardCorners(gray, chessboardSize, None)
+        # print("Ret", ret)
+        # If found, add object points, image points (after refining them)
+        if ret == True:
+
+            objpoints.append(objp)
+            corners2 = cv.cornerSubPix(
+                gray, corners, (11, 11), (-1, -1), criteria)
+            imgpoints.append(corners)
+
+            # Draw and display the corners
+            if show_chessboard:
+                cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
+                cv.imshow('img', scale(img, window_ratio))
+
+                cv.waitKey()
+    print(f"Using {len(objpoints)} points to calibrate the camera.")
+    ret = cv.calibrateCamera(objpoints, imgpoints, frameSize, None, None)
+    cv.destroyAllWindows()
+    return ret
+
+
+class CameraInfo:
+    def __init__(self, info) -> None:
+        self.ret, self.cameraMatrix, self.dist, self.rvecs, self.tvecs = info
+
+
+def save_camera_info(camInfo, path="../cameraInfo.pkl"):
+    with open(path, "wb") as f:
+        pickle.dump(camInfo, f)
+        print("Saved")
+
+
+def load_camera_info(path="../cameraInfo.pkl") -> CameraInfo:
+    with open(path, "rb") as f:
+        return pickle.load(f)
 
 
 def mask_road(image, polygon):
@@ -245,12 +364,11 @@ def draw_curvatures(image, xs, ys, figsize=(10, 10), cmap=None, linewidth=2):
     return image
 
 
-def load_f_from_file(filepath="../cameraMatrix.npy"):
-    matrix = np.load(filepath)
-    print("found matrix:\n", matrix)
-    f_x, f_y, _ = matrix.diagonal()
-    f = np.mean([f_x, f_y])
-    return f
+def load_f_from_file(filepath="../cameraInfo.pkl"):
+    info = load_camera_info(filepath)
+    print(info)
+    print("found matrix:\n", info.cameraMatrix)
+    return info.cameraMatrix.diagonal()[:2].mean()
 
 
 def combine(image, original, use_bitwise=True):
