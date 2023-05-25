@@ -1,7 +1,8 @@
+from typing import Callable
 import base64
 import asyncio
 import websockets
-from utils import show_window, put_text, scale
+from utils_ import show_window, put_text, scale, timed_function
 from multiprocessing import Queue, Process
 
 from lane_detector import LaneDetector
@@ -9,6 +10,7 @@ from car import CarDetector
 import time
 import cv2
 import numpy as np
+from param import spawn_params_window
 
 
 class Worker:
@@ -27,6 +29,7 @@ class Worker:
             self.target(*args)
         except Exception as e:
             print(e)
+            raise e
             pass
         print("**** Stopped", self.__class__.__name__)
 
@@ -45,8 +48,12 @@ class LaneWorker(Worker):
         self.w = super().__init__(self.tick, args=(self.q2,))
 
     def tick(self, q: Queue, q2: Queue):
+        spawn_params_window()
+        # print("Mains up")
         while True:
-            s = time.time()
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                return
+            # s = time.time()
             got = q.get()
             if got is None:
                 break
@@ -60,36 +67,51 @@ class LaneWorker(Worker):
             else:
                 raise str(action) + " not recognized"
             # print("lane Done in:", s, time.time()-s)
+        cv2.destroyAllWindows()
 
     def detect(self, d, frame):
         return lane_detect_one_frame(d, frame)
 
     def draw(self, d: LaneDetector, frame):
-        return d.draw(frame)
+        if d.detected_lines:
+            frame = d.draw(frame)
+        return frame
 
 
 class DrawWorker(Worker):
-    def __init__(self, frame_ratio, window_names) -> None:
+    def __init__(self, frame_ratio, window_names, stack=True) -> None:
         self.q2 = Queue()
         self.window_names = window_names
         self.prev_time = time.time()-1
         self.frame_ratio = frame_ratio
         super().__init__(target=self.draw, args=(self.q2,))
+        self.stack = stack
+        # for wn in window_names:
+        #     print("showing window", wn)
+
+        #     cv2.namedWindow(wn)
 
     def draw(self, q: Queue, q2: Queue):
-        # ld_ =
+        # got = q.get()
         while True:
+            # if not q.empty():
+            #     got = q.get()
             got = q.get()
             s = time.time()
             if got is None:
                 break
-            frames = got
+            self.frames = got
             # print("Drawing")
             self.update_fps()
-            for i, name in enumerate(self.window_names):
-                frame = frames[i]
+            for i in range(len(self.frames)):
+                frame = self.frames[i]
+                name = self.window_names[i]
                 self.draw_fps(frame)
                 show_window(name, frame, self.frame_ratio)
+            # else:
+            #     frame = np.hstack(self.frames)
+            #     self.draw_fps(frame)
+            #     show_window(name, frame, self.frame_ratio)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 q2.put(None)
             q2.put("")
@@ -125,6 +147,7 @@ class CarWorker(Worker):
             # print("CarWorker", "Got action:", action)
             if action == "detect":
                 frame = self.detect(self.detector, frame)
+                q2.put(self.detector.safe)
             elif action == "draw":
                 frame = self.draw(self.detector, frame)
                 q2.put(frame)
@@ -140,14 +163,17 @@ def draw_main_window(frame, fr):
     show_window("Main window", frame, fr)
 
 
+# @timed_function
 def lane_detect_one_frame(detector: LaneDetector, frame):
     detector.pipeline(frame)
-    is_in_lane = detector.is_in_lane()
-    detector.put_text(
-        frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
+    if detector.detected_lines:
+        is_in_lane = detector.is_in_lane()
+        detector.put_text(
+            frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
     return frame
 
 
+# @timed_function
 def car_detect_one_frame(detector: CarDetector, frame):
     detector.detect(frame)
     return frame
@@ -170,10 +196,12 @@ class WebsocketWorker(Worker):
         self.running = True
 
     def encode(self, frame):
+        print(frame.shape)
+        # frame = scale(frame, 2)
+        print(frame.shape)
         encoded = cv2.imencode('.jpg', frame)[1]
-        frale = str(base64.b64encode(encoded))
-        frale = frale[2:len(frale)-1]
-        frame = scale(frame, 4)
+        frame = str(base64.b64encode(encoded))
+        frame = frame[2:len(frame)-1]
         return frame
 
     def serve(self, q: Queue):
@@ -188,11 +216,9 @@ class WebsocketWorker(Worker):
                     frame = got
                     frame = self.encode(frame)
                     await client.send(frame)
-                    # print("Frame sent to client:")
+                    print("Frame sent to client:")
             except Exception as e:
                 print(e)
-            self.event_loop.stop()
-            print("Stopped serving")
         start_server = websockets.serve(
             send,
             self.host,
@@ -205,7 +231,12 @@ class WebsocketWorker(Worker):
         asyncio.get_event_loop().run_until_complete(start_server)
         self.event_loop = asyncio.get_event_loop()
         self.event_loop.run_forever()
-        del start_server
+        self.end()
+
+    def end(self):
+        self.event_loop.stop()
+        print("Stopped serving")
+        # del start_server
         print("Yep")
         import sys
         sys.exit(0)

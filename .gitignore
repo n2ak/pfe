@@ -1,3 +1,7 @@
 **/__pycache__
+**/.vscode
 rsrc
 *.rar
+ultralytics_yolov5_master
+**/trusted_list
+**/yolov5s.pt

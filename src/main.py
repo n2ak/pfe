@@ -1,12 +1,12 @@
-from threading import Thread
-from multiprocessing import Pool, Queue, Process
+from utils_ import put_text, seek_video
 from lane_detector import LaneDetector
+from car import CarDetector
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import time
-from car import CarDetector
-from utils import show_window
+from workers import *
+from param import *
+# from workers import LaneWorker, CarWorker, DrawWorker, lane_detect_one_frame, car_detect_one_frame, draw_main_window
 
 
 def simple_on_danger(*x):
@@ -21,17 +21,109 @@ class Program:
         use_async=False,
         frame_ratio=2,
         on_danger=simple_on_danger,
+        draw=True,
+        draw_lines=True,
     ) -> None:
-        self.lane_d = lane_d
-        self.car_d = car_d
         self.prev_time = time.time()-1
         self.use_async = use_async
         self.frame_ratio = frame_ratio
         self.on_danger = on_danger
+        self.lane_d = lane_d
+        self.car_d = car_d
+        self.draw = draw
+        self.draw_lines = draw_lines
+        self.window_names = ["Main"]
+
+        if use_async:
+            self.init_workers()
+
+        self.runner_func = self.run_worker
+        if not use_async:
+            spawn_params_window()
+            self.runner_func = self.run_sync
+
+    def init_workers(self):
+        if self.draw:
+            self.window_names.append("Perp")
+            self.draw_worker = DrawWorker(self.frame_ratio, self.window_names)
+            print("Waiting for draw to start")
+        self.lane_worker = LaneWorker(self.lane_d)
+        self.car_worker = CarWorker(self.car_d)
+        # self.network = WebsocketWorker("0.0.0.0", 9999)
+
+    def start(self):
+        self.lane_worker.start()
+        self.car_worker.start()
+        # self.network.start()
+        if self.draw:
+            self.draw_worker.start()
+    fps_ = []
 
     def stop(self):
         cv2.destroyAllWindows()
-    fps_ = []
+        if self.use_async:
+            print("Stopping all workers")
+            self.lane_worker.stop()
+            self.car_worker.stop()
+            # self.network.stop()
+            if self.draw:
+                self.draw_worker.stop()
+
+    def run_worker(self, frame):
+        l_w, c_w = self.lane_worker, self.car_worker
+        f = frame.copy()
+        c_w.q.put(("detect", frame))
+        safe = c_w.q2.get()
+        if safe:
+            l_w.q.put(("detect", frame))
+
+            l_w.q.put(("draw", frame))
+            frame, lines = l_w.q2.get()
+            print("shape", lines.shape)
+        else:
+            lines = np.zeros(frame.shape)
+        c_w.q.put(("draw", frame))
+        frame = c_w.q2.get()
+
+        # self.network.q.put(frame)
+        if self.draw:
+            frames = [frame,]
+            if self.draw_lines:
+                frames.append(lines)
+            self.draw_worker.q.put(frames)
+            got = self.draw_worker.q2.get()
+            return got is None
+        return False
+
+    def run_sync(self, frame):
+        frame = car_detect_one_frame(self.car_d, frame)
+        if self.car_d.safe:
+            frame = lane_detect_one_frame(self.lane_d, frame)
+            self.lane_d.lines
+        if self.draw:
+            if self.car_d.safe:
+                frame = self.lane_d.draw(frame)
+                if self.draw_lines:
+                    show_window("Perp", self.lane_d.lines, 2)
+            frame = self.car_d.draw(frame)
+            self.update_fps(frame)
+            draw_main_window(frame, self.frame_ratio)
+            return bool(cv2.waitKey(1) & 0xFF == ord('q'))
+        return False
+
+    def run(self, video):
+        if self.use_async:
+            self.start()
+        try:
+            while True:
+                self.on, frame = video.read()
+                if not self.on:
+                    break
+                if self.runner_func(frame):
+                    break
+        except KeyboardInterrupt:
+            pass
+        self.stop()
 
     def update_fps(self, frame):
         new = time.time()
@@ -41,96 +133,5 @@ class Program:
         fps = np.mean(self.fps_)
         self.prev_time = new
         text = f"FPS: {int(fps)}"
-        self.lane_d.put_text(frame, text, (7, 90), thickness=2)
-
-    def run(self, video, pool):
-        while True:
-            self.on, frame = video.read()
-            if self.on:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                # s = time.time()
-                if self.use_async:
-                    lane = pool.apply_async(self.tick, args=(frame.copy(),))
-                    car = pool.apply_async(self.detect_cars,
-                                           args=(frame.copy(),))
-                    self.lane_d = lane.get()
-                    self.car_d = car.get()
-                else:
-                    self.tick(frame)
-                    self.detect_cars(frame)
-                # print(1/(time.time()-s))
-
-                self.update_fps(frame)
-                frame = self.draw_main_frame(frame)
-                show_window("Main window", frame, self.frame_ratio)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.stop()
-                    break
-            else:
-                self.stop()
-                break
-
-    def detect_cars(self, frame):
-        print("detect_cars")
-        self.car_d.detect(frame)
-        return self.car_d
-
-    # def detect_cars(self, frame):
-    #
-
-    def tick(self, frame):
-        print("ticking")
-        self.lane_d.pipeline(frame)
-        is_in_lane = self.lane_d.is_in_lane()
-        self.fps = 1
-        self.lane_d.put_text(
-            frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
-        return self.lane_d
-
-    def draw_main_frame(self, frame):
-        frame = self.lane_d.draw(frame)
-        frame = self.car_d.draw(frame)
+        put_text(frame, text, (7, 90), thickness=2)
         return frame
-
-
-def test():
-    F = 2800
-    FOCAL_LENGTH = 4.74
-    config = {
-        "polygon_height": 180,
-        "lane_center1": 720,
-        "lane_width1": 70*2,
-        "lane_center2": 700,
-        "lane_width2": 380*2,
-    }
-    src = "../rsrc/video2.mp4"
-    # p.start()
-    # p.run()
-    video = cv2.VideoCapture(src)
-    ld = LaneDetector(
-        (720, 1280),
-        use_bitwise=True,
-        draw_roi=True,
-        show_perp_lines=True,
-        color_threshold=180,
-        window_size_ratio=2,
-        use_canny=True,
-        canny_thresholds=(70, 100)
-    )
-
-    def danger(cause):
-        print("Danger", cause)
-    car_d = CarDetector(F, FOCAL_LENGTH)
-    ld.init_polygon(config)
-
-    p = Program(ld, car_d, use_async=True, frame_ratio=2)
-
-    pool = Pool(6)
-    p.run(video, pool)
-    pool.close()
-    pool.join()
-
-
-if __name__ == "__main__":
-    test()

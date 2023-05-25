@@ -9,6 +9,21 @@ cv = cv2
 def circle_at(ee, p): cv2.circle(ee, p, 30, (255, 255, 255))
 
 
+def init_polygon(config: dict, H: int):
+    polygon_height = config.get("polygon_height", 300)
+    lane_center1 = config.get("lane_center1", 585), H - polygon_height
+    lane_width1 = config.get("lane_width1", 250)
+    lane_center2 = config.get("lane_center2", 638), H
+    lane_width2 = config.get("lane_width2", 800)
+    polygon = []
+    polygon.append((lane_center1[0]-lane_width1//2, lane_center1[1]))
+    polygon.append((lane_center1[0]+lane_width1//2, lane_center1[1]))
+    polygon.append((lane_center2[0]+lane_width2//2, lane_center2[1]))
+    polygon.append((lane_center2[0]-lane_width2//2, lane_center2[1]))
+    polygon = np.array(polygon)
+    return np.array([polygon], dtype=np.int32)
+
+
 def getOptimalNewCameraMatrix(shape, cameraMatrix, distortion, alpha=1):
     h,  w = shape
     newcameramtx, roi = cv2.getOptimalNewCameraMatrix(
@@ -30,12 +45,23 @@ def undistort(img, cameraMatrix, distortion, alpha=1, crop=False, use_optimal=Tr
     return dst
 
 
+def equalize_hist(gray, thresh=150, type=cv2.THRESH_BINARY):
+    # https://docs.opencv.org/4.x/d5/daf/tutorial_py_histogram_equalization.html
+    gray = cv2.equalizeHist(gray)
+    _, th = cv2.threshold(gray, thresh, maxval=255, type=type)
+    return th
+
+
 def show_img(img, figsize=None, **kwargs):
     figsize = figsize or (5, 5)
     plt.figure(figsize=figsize)
     plt.imshow(img, **kwargs)
     plt.axis('off')
     plt.show()
+
+
+def show_gray_img(img, **kwargs):
+    show_img(img, cmap='gray', **kwargs)
 
 
 def grad(im, ddepth, delta, scale, vert=False):
@@ -47,15 +73,7 @@ def grad(im, ddepth, delta, scale, vert=False):
     return cv.convertScaleAbs(grad_x)
 
 
-def sobel(image, scale=None, delta=None, ddepth=None, both=False):
-    scale = scale or 1
-    delta = delta or 0
-    ddepth = ddepth or cv.CV_16S
-    print(scale, delta, ddepth)
-    src = image
-    # Check if image is loaded fine
-    src = cv.GaussianBlur(src, (3, 3), 0)
-    gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+def sobel(gray, scale=1, delta=0, ddepth=cv.CV_16S, both=False):
     gray_x = grad(gray, ddepth, delta, scale)
     if not both:
         return gray_x
@@ -115,6 +133,10 @@ def calibrate(
     ret = cv.calibrateCamera(objpoints, imgpoints, frameSize, None, None)
     cv.destroyAllWindows()
     return ret
+
+
+def dilate(gray, kernel=(50, 50), iterations=10):
+    return cv2.dilate(gray, kernel, iterations)
 
 
 class CameraInfo:
@@ -307,29 +329,36 @@ def histogram_peaks(hist):
     return a, b
 
 
-def polynome(coeffs, xs):
-    return coeffs[0]*xs**2 + coeffs[1]*xs + coeffs[2]
+def polynome(coeffs, y):
+    A, B, C = coeffs
+    res = A * y**2 + B * y + C
+    curvature = abs((2 * A) / (1 + (2 * A * y + B) ** 2) ** (3/2))
+    radius = 1 / curvature
+    radius = np.mean(radius)
+    return radius, res
 
 
 def fit_poly_one_side(image, indices, ys, nonzero):
     nonzeroy, nonzerox = nonzero
     if indices.shape == (0,):
         return []
-    leftx = nonzerox[indices]
-    lefty = nonzeroy[indices]
-    left_fit = np.polyfit(lefty, leftx, 2)
-    left_fitx = polynome(left_fit, ys)
-    return left_fitx
+    x = nonzerox[indices]
+    y = nonzeroy[indices]
+    fit = np.polyfit(y, x, 2)
+    radius, fitx = polynome(fit, ys)
+    return radius, fitx
 
 
 def fit_poly(image, left_indices, right_indices):
 
     nonzero = np.array(image.nonzero())
     ys = np.linspace(0, image.shape[0]-1, image.shape[0])
-    left_fitx = fit_poly_one_side(image, left_indices, ys, nonzero)
-    right_fitx = fit_poly_one_side(image, right_indices, ys, nonzero)
+    radius_left, left_fitx = fit_poly_one_side(
+        image, left_indices, ys, nonzero)
+    radius_right, right_fitx = fit_poly_one_side(
+        image, right_indices, ys, nonzero)
 
-    return left_fitx, right_fitx, ys
+    return radius_left, radius_right, left_fitx, right_fitx, ys
 
 
 def get_object_distance(
@@ -346,9 +375,9 @@ def get_object_distance(
     - object_size_in_real_world in "mm"
     """
     pixels_per_mm = f / focal_length
-    print(pixels_per_mm)
+    # print(pixels_per_mm)
     pixels_per_mm = round(pixels_per_mm / ratio)
-    print(pixels_per_mm)
+    # print(pixels_per_mm)
     object_image_sensor = object_size_in_image / pixels_per_mm
     distance = object_size_in_real_world * focal_length / object_image_sensor
     return distance  # in "mm"
@@ -412,19 +441,29 @@ def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, 
     return image
 
 
-def get_curvatures(image, RECENTER_MINPIX):
+def get_curvatures(image, RECENTER_MINPIX, n_windows=10, margin=50):
     hist = histogram(image)
     left_peak, right_peak = histogram_peaks(hist)
     left_lane_inds, right_lane_inds = get_lane_indices(
-        image, left_peak, right_peak, 10, 50, RECENTER_MINPIX)
-    left_fitx, right_fitx, ys = fit_poly(
+        image, left_peak, right_peak, n_windows, margin, RECENTER_MINPIX)
+    if left_lane_inds.size == 0 or right_lane_inds.size == 0:
+        return None
+    radius_left, radius_right, left_fitx, right_fitx, ys = fit_poly(
         image, left_lane_inds, right_lane_inds)
-    return (left_fitx, right_fitx), ys
+    return (radius_left, radius_right), (left_fitx, right_fitx), ys
 
 
-def threshold(image, thresh=100, maxval=255, type=cv2.THRESH_BINARY):
-    _, image = cv2.threshold(image, thresh, maxval, type)
+def threshold(image, thresh, maxval=255, type=cv2.THRESH_BINARY):
+    _, image = cv2.threshold(image, thresh.get_value(), maxval, type)
     return image
+
+
+def seek_video(video, seconds):
+    fps = video.get(cv2.CAP_PROP_FPS)
+    total_frames = video.get(cv2.CAP_PROP_FRAME_COUNT)
+    frame_to_seek_to = seconds * fps
+    assert frame_to_seek_to < total_frames, f"{frame_to_seek_to} < {total_frames}?"
+    video.set(cv2.CAP_PROP_POS_FRAMES, frame_to_seek_to)
 
 
 def canny(image, t1, t2):
@@ -433,7 +472,7 @@ def canny(image, t1, t2):
 
 def scale(frame, ratio=1, size=None):
     if size is None:
-        size = (frame.shape[1]//ratio, frame.shape[0]//ratio)
+        size = (int(frame.shape[1]//ratio), int(frame.shape[0]//ratio))
     return cv2.resize(frame, size)
 
 
@@ -444,3 +483,18 @@ def show_window(name, image, ratio=1):
 
 def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
     cv2.putText(frame, text, org, font, scale, color, **kwargs)
+
+
+def timed_function(func):
+    import time
+    import functools
+    name = func.__name__
+
+    @functools.wraps(func)
+    def func_w(*args):
+        start = time.time()
+        res = func(*args)
+        end = time.time()
+        print(f"Function ran: {name} in {end - start:.2} sec")
+        return res
+    return func_w

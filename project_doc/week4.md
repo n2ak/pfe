@@ -5,6 +5,6 @@
     * https://scikit-image.org/docs/stable/auto_examples/transform/plot_fundamental_matrix.html
 
 # Done
-    * Camera Camibration to obtain params.
+    * Camera Calibration to obtain params.
     * Calculate distance of an object from camera.
     * Added multi processing

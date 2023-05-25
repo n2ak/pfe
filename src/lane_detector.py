@@ -2,7 +2,9 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import *
+from utils_ import *
+from param import *
+from typing import Tuple
 
 N_WINDOWS = 10
 MARGIN = 100
@@ -14,13 +16,13 @@ class LaneDetector:
     def __init__(
         self,
         img_shape,
-        use_bitwise=True,
-        draw_roi=False,
+        use_bitwise: CheckBoxParam = True,
+        draw_roi: CheckBoxParam = False,
         show_perp_lines=False,
-        color_threshold=100,
+        color_threshold: TrackbarParam = 100,
         window_size_ratio=1,
-        use_canny=False,
-        canny_thresholds=(100, 300),
+        use_canny: CheckBoxParam = False,
+        canny_thresholds: Tuple[TrackbarParam, TrackbarParam] = (100, 300),
     ) -> None:
         self.H, self.W = img_shape
         self.use_bitwise = use_bitwise
@@ -32,21 +34,7 @@ class LaneDetector:
         self.canny_thresholds = canny_thresholds
 
     def init_polygon(self, config: dict = {}):
-        polygon_height = config.get("polygon_height", 300)
-        lane_center1 = config.get("lane_center1", 585), self.H - polygon_height
-        lane_width1 = config.get("lane_width1", 250)
-        lane_center2 = config.get("lane_center2", 638), self.H
-        print(lane_center2)
-        lane_width2 = config.get("lane_width2", 800)
-        # polygon_length2 = 400
-        # polygon_length2 = 100
-        polygon = []
-        polygon.append((lane_center1[0]-lane_width1//2, lane_center1[1]))
-        polygon.append((lane_center1[0]+lane_width1//2, lane_center1[1]))
-        polygon.append((lane_center2[0]+lane_width2//2, lane_center2[1]))
-        polygon.append((lane_center2[0]-lane_width2//2, lane_center2[1]))
-        polygon = np.array(polygon)
-        self.polygon = np.array([polygon], dtype=np.int32)
+        self.polygon = init_polygon(config, self.H)
 
     def trackbar(self, title: str, window: str, on_change):
         return cv2.createTrackbar(title, window, 19, 100, on_change)
@@ -57,49 +45,50 @@ class LaneDetector:
         # time.(.1)
         # result = draw_lane_zone(np.zeros_like(
         #     self.image_warped) if self.use_bitwise else self.image_warped, self.xs, self.ys, 50)
-        if self.draw_roi:
+        if self.draw_roi.get_value():
             result = draw_polygon(frame, self.polygon[0])
         # print("warped", dir(self))
-
+        use_bitwise = self.use_bitwise.get_value()
         result = draw_lane_zone(
             np.zeros_like(
-                self.image_warped) if self.use_bitwise else self.image_warped,
+                self.image_warped) if use_bitwise else self.image_warped,
             self.xs,
             self.ys,
             50
         )
         result = warp_perspective(
             (result), (self.H, self.W), self.polygon, flip=True)
-        result = combine(result, frame, use_bitwise=self.use_bitwise)
+        result = combine(result, frame, use_bitwise=use_bitwise)
         return result
 
     def pipeline(self, frame):
+
+        self.detected_lines = False
         result = warp_perspective(frame, (self.H, self.W), self.polygon)
         self.image_warped = None
         self.image_warped = result.copy()
-        if not self.use_canny:
-            result = threshold(result, thresh=self.color_threshold)
+        # TODO: add gaussian blur
+        # TODO: use equalize_hist
+        # TODO: use dilate
+        if not self.use_canny.get_value():
             result = cv2.cvtColor(result, cv2.COLOR_RGB2GRAY)
+            result = dilate(result, iterations=1)
+            result = threshold(result, thresh=self.color_threshold)
         else:
             result = canny(
-                result, self.canny_thresholds[0], self.canny_thresholds[1])
+                result, self.canny_thresholds[0].get_value(), self.canny_thresholds[1].get_value())
         self.lines = result.copy()
-        if self.show_perp_lines:
-            show_window("show_perp_lines", result, self.window_size_ratio)
-        # hist = hi stogram(result//255)
-        self.xs, self.ys = get_curvatures(result, RECENTER_MINPIX)
+        lanes = get_curvatures(result, RECENTER_MINPIX)
+        if lanes is not None:
+            self.detected_lines = True
+            self.radiuses, self.xs, self.ys = lanes
 
     def is_in_lane(self):
-        return True
-
-    def show_window(self, name, image, ratio=1):
-        if not SHOW_WINDOWS:
-            return
-
-        if self.window_size_ratio != 1:
-            size = int(image.shape[1]//ratio), int(image.shape[0]//ratio)
-            image = cv2.resize(image, size)
-        cv2.imshow(name, image)
+        r_left, r_right = self.radiuses
+        # print(self.radiuses)
+        th = 900
+        return not (r_left < th or r_right < th)
+        # return True
 
     def put_text(self, frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
         cv2.putText(frame, text, org, font, scale, color, **kwargs)
