@@ -374,6 +374,7 @@ def get_object_distance(
     - object_size_in_image in "px"
     - object_size_in_real_world in "mm"
     """
+    return object_size_in_real_world * f/object_size_in_image
     pixels_per_mm = f / focal_length
     # print(pixels_per_mm)
     pixels_per_mm = round(pixels_per_mm / ratio)
@@ -498,3 +499,10 @@ def timed_function(func):
         print(f"Function ran: {name} in {end - start:.2} sec")
         return res
     return func_w
+
+
+def load_yolo(version: str, base=None):
+    import torch
+    if base is not None:
+        torch.hub.set_dir(base)
+    return torch.hub.load(f'ultralytics/{version}', f'{version}s')

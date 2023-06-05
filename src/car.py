@@ -1,4 +1,4 @@
-from utils_ import get_object_distance, scale
+from utils_ import get_object_distance, load_yolo
 import cv2
 import torch
 import os
@@ -11,7 +11,7 @@ def is_vehicule(classes, c: str):
 
 
 class CarDetector:
-    CAR_MIN_DISTANCE = 40
+    CAR_MIN_DISTANCE = 20
     AVG_CAR_WIDTH = 2.5
 
     # cc = cv2.imread("../rsrc/cc.png")
@@ -31,8 +31,7 @@ class CarDetector:
         self.cars = []
         self.safe = True
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
-        torch.hub.set_dir("../")
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+        self.model = Yolo()
         self.frame_center_y = frame_center_y
 
     def detect(self, frame):
@@ -47,7 +46,7 @@ class CarDetector:
     #     frame = scale(self.cc, size=frame.shape[:2][::-1])  # TODO
     #     return self.car_cascade.detectMultiScale(frame, 1.1, 1)
     def detect_cars_in_front(self, frame, return_distances=True):
-        results = self.model(frame)
+        results = self.model.detect(frame)
         cars = []
         for car in results.pandas().xyxy[0].to_numpy():
             x, y, xmax, ymax, conf, c, name = car
@@ -103,8 +102,25 @@ class CarDetector:
         return safe
 
     def draw(self, frame):
+        return self.model.draw(frame, self.close_cars)
 
-        for x, y, w, h, name, distance in self.close_cars:
+    def distance_type(self, distance):
+        if distance < 15_000:
+            return "very close"
+        if distance < 30_000:
+            return "close"
+
+
+class Yolo:
+    def __init__(self, version: str) -> None:
+        assert version in ["yolov5", "yolov8"]
+        self.model = load_yolo(version, "../")
+
+    def detect(self, frame):
+        return self.model(frame)
+
+    def draw(self, frame, close_cars):
+        for x, y, w, h, name, distance in close_cars:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
             distance = int(distance)
             distance_type = self.distance_type(distance)
@@ -112,14 +128,7 @@ class CarDetector:
 
             draw_text_with_backgraound(
                 frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
-
         return frame
-
-    def distance_type(self, distance):
-        if distance < 30_000:
-            return "very close"
-        if distance < 40_000:
-            return "close"
 
 
 def draw_text_with_backgraound(frame, texts: str, x, y, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=.8, font_thickness=2, offset=20):
