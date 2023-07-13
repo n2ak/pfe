@@ -71,7 +71,7 @@ class CarDetector:
         offset = 100
         in_front = (self.frame_center_y -
                     offset) < center_y < (self.frame_center_y + offset)
-        # # TODO:add check
+        # # TODO :add check
         # if in_front and (y+h) > (720-150):
         #     print("y+h", y+h)
         return in_front
@@ -113,6 +113,7 @@ class CarDetector:
 
 class Yolo:
     def __init__(self, version: str) -> None:
+        version = version.lower()
         assert version in ["yolov5", "yolov8"]
         self.model = load_yolo(version, "../")
 
@@ -136,8 +137,8 @@ def draw_text_with_backgraound(frame, texts: str, x, y, font=cv2.FONT_HERSHEY_SI
     for text in texts:
         (text_width, text_height), _ = cv2.getTextSize(
             text, font, font_scale, font_thickness)
-        cv2.rectangle(frame, (x, y), (x+text_width, y+text_height+5),
+        cv2.rectangle(frame, (x, y), (x + text_width, y + text_height + 5),
                       (0, 0, 0), cv2.FILLED)
-        cv2.putText(frame, text, (x, y+offset),
+        cv2.putText(frame, text, (x, y + offset),
                     font, font_scale, (0, 255, 0), font_thickness)
         y = y+text_height+5

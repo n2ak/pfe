@@ -361,6 +361,13 @@ def fit_poly(image, left_indices, right_indices):
     return radius_left, radius_right, left_fitx, right_fitx, ys
 
 
+def get_object_distance2(f, object_size_in_image, object_size_in_real_world):
+    """
+    f: focal distance in pixels
+    """
+    return object_size_in_real_world * f / object_size_in_image
+
+
 def get_object_distance(
     f,
     focal_length,
@@ -374,7 +381,6 @@ def get_object_distance(
     - object_size_in_image in "px"
     - object_size_in_real_world in "mm"
     """
-    return object_size_in_real_world * f/object_size_in_image
     pixels_per_mm = f / focal_length
     # print(pixels_per_mm)
     pixels_per_mm = round(pixels_per_mm / ratio)

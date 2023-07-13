@@ -1,5 +1,6 @@
 
 # Computer vision
+- The lane is geometrically modeled,primitive information (gradient/color/texture) is used
 - Prespective trosform
 - Binary thresholding
 - woking with hsv

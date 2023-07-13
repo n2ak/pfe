@@ -1,5 +1,5 @@
 from utils_ import put_text, seek_video
-from lane_detector import LaneDetector
+from lane.ml_lane_detector import LaneDetector
 from car import CarDetector
 import cv2
 import numpy as np

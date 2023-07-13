@@ -5,7 +5,7 @@ import websockets
 from utils_ import show_window, put_text, scale, timed_function
 from multiprocessing import Queue, Process
 
-from lane_detector import LaneDetector
+from lane.ml_lane_detector import LaneDetector
 from car import CarDetector
 import time
 import cv2

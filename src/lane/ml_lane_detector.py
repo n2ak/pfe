@@ -1,10 +1,10 @@
 
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 from utils_ import *
 from param import *
+import numpy as np
 from typing import Tuple
+from .base import LaneDetectorBase
 
 N_WINDOWS = 10
 MARGIN = 100
@@ -12,7 +12,8 @@ RECENTER_MINPIX = 50
 SHOW_WINDOWS = True
 
 
-class LaneDetector:
+class MlLaneDetector(LaneDetectorBase):
+
     def __init__(
         self,
         img_shape,
@@ -24,6 +25,7 @@ class LaneDetector:
         use_canny: CheckBoxParam = False,
         canny_thresholds: Tuple[TrackbarParam, TrackbarParam] = (100, 300),
     ) -> None:
+        super().__init__()
         self.H, self.W = img_shape
         self.use_bitwise = use_bitwise
         self.draw_roi = draw_roi
@@ -86,9 +88,8 @@ class LaneDetector:
     def is_in_lane(self):
         r_left, r_right = self.radiuses
         # print(self.radiuses)
-        th = 900
+        th = 900  # TODO make it a Param
         return not (r_left < th or r_right < th)
-        # return True
 
     def put_text(self, frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
         cv2.putText(frame, text, org, font, scale, color, **kwargs)
