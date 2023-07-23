@@ -90,6 +90,3 @@ class MlLaneDetector(LaneDetectorBase):
         # print(self.radiuses)
         th = 900  # TODO make it a Param
         return not (r_left < th or r_right < th)
-
-    def put_text(self, frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
-        cv2.putText(frame, text, org, font, scale, color, **kwargs)

@@ -2,7 +2,7 @@ from typing import Callable
 import base64
 import asyncio
 import websockets
-from utils_ import show_window, put_text, scale, timed_function
+from utils_ import show_window, put_text, scale, timed_function, car_detect_one_frame, lane_detect_one_frame
 from multiprocessing import Queue, Process
 
 from lane.ml_lane_detector import LaneDetector
@@ -157,26 +157,6 @@ class CarWorker(Worker):
 
     def draw(self, d: CarDetector, frame):
         return d.draw(frame)
-
-
-def draw_main_window(frame, fr):
-    show_window("Main window", frame, fr)
-
-
-# @timed_function
-def lane_detect_one_frame(detector: LaneDetector, frame):
-    detector.pipeline(frame)
-    if detector.detected_lines:
-        is_in_lane = detector.is_in_lane()
-        detector.put_text(
-            frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
-    return frame
-
-
-# @timed_function
-def car_detect_one_frame(detector: CarDetector, frame):
-    detector.detect(frame)
-    return frame
 
 
 class WebsocketWorker(Worker):

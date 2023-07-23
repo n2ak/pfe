@@ -1,4 +1,4 @@
-from utils_ import get_object_distance, load_yolo
+from utils_ import get_object_distance, load_yolo, draw_text_with_backgraound
 import cv2
 import torch
 import os
@@ -11,7 +11,7 @@ def is_vehicule(classes, c: str):
 
 
 class CarDetector:
-    CAR_MIN_DISTANCE = 20
+    CAR_MIN_DISTANCE = 30
     AVG_CAR_WIDTH = 2.5
 
     # cc = cv2.imread("../rsrc/cc.png")
@@ -28,15 +28,14 @@ class CarDetector:
         self.f = f
         self.focal_length = focal_length
         self.ratio = ratio
-        self.cars = []
+        self.close_cars = []
         self.safe = True
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
-        self.model = Yolo()
+        self.model = Yolo("yolov5")
         self.frame_center_y = frame_center_y
 
     def detect(self, frame):
         self.safe = self.is_car_safe(frame)
-        # print("car safe:", self.safe)
 
     def is_car_in_front_close(self, distance):
         # print(distance, self.CAR_MIN_DISTANCE * 1000)
@@ -101,14 +100,8 @@ class CarDetector:
                     safe = False
         return safe
 
-    def draw(self, frame):
-        return self.model.draw(frame, self.close_cars)
-
-    def distance_type(self, distance):
-        if distance < 15_000:
-            return "very close"
-        if distance < 30_000:
-            return "close"
+    def draw(self, frame, close_cars):
+        return self.model.draw(frame, close_cars)
 
 
 class Yolo:
@@ -116,6 +109,12 @@ class Yolo:
         version = version.lower()
         assert version in ["yolov5", "yolov8"]
         self.model = load_yolo(version, "../")
+
+    def distance_type(self, distance):
+        if distance < 15_000:
+            return "very close"
+        if distance < 30_000:
+            return "close"
 
     def detect(self, frame):
         return self.model(frame)
@@ -130,15 +129,3 @@ class Yolo:
             draw_text_with_backgraound(
                 frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
         return frame
-
-
-def draw_text_with_backgraound(frame, texts: str, x, y, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=.8, font_thickness=2, offset=20):
-    texts = texts.split("\n")
-    for text in texts:
-        (text_width, text_height), _ = cv2.getTextSize(
-            text, font, font_scale, font_thickness)
-        cv2.rectangle(frame, (x, y), (x + text_width, y + text_height + 5),
-                      (0, 0, 0), cv2.FILLED)
-        cv2.putText(frame, text, (x, y + offset),
-                    font, font_scale, (0, 255, 0), font_thickness)
-        y = y+text_height+5

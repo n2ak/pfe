@@ -3,10 +3,45 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+# from lane import LaneDetectorBase
+# from car import CarDetector
 cv = cv2
 
 
 def circle_at(ee, p): cv2.circle(ee, p, 30, (255, 255, 255))
+
+
+def draw_text_with_backgraound(frame, texts: str, x, y, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=.8, font_thickness=2, offset=20):
+    texts = texts.split("\n")
+    for text in texts:
+        (text_width, text_height), _ = cv2.getTextSize(
+            text, font, font_scale, font_thickness)
+        cv2.rectangle(frame, (x, y), (x + text_width, y + text_height + 5),
+                      (0, 0, 0), cv2.FILLED)
+        cv2.putText(frame, text, (x, y + offset),
+                    font, font_scale, (0, 255, 0), font_thickness)
+        y = y+text_height+5
+
+
+def draw_main_window(frame, fr):
+    show_window("Main window", frame, fr)
+
+
+def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
+    cv2.putText(frame, text, org, font, scale, color, **kwargs)
+
+
+def lane_detect_one_frame(detector, frame):
+    detector.pipeline(frame)
+    if detector.detected_lines:
+        is_in_lane = detector.is_in_lane()
+        put_text(frame, f"In lane: {bool(is_in_lane)}", (7, 50), thickness=2)
+    return frame
+
+
+def car_detect_one_frame(detector, frame):
+    detector.detect(frame)
+    return frame
 
 
 def init_polygon(config: dict, H: int):
@@ -488,8 +523,8 @@ def show_window(name, image, ratio=1):
     cv2.imshow(name, image)
 
 
-def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
-    cv2.putText(frame, text, org, font, scale, color, **kwargs)
+# def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):
+#     cv2.putText(frame, text, org, font, scale, color, **kwargs)
 
 
 def timed_function(func):
