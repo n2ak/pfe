@@ -1,4 +1,5 @@
-from .params import Params
+from car import CarParams
+from drawer import DrawParams
 import cv2
 import threading
 import time
@@ -13,7 +14,8 @@ source = "./video2.mp4"
 _frame_count = 30
 _outputFrame = None
 _frame_lock = threading.Lock()
-params = Params()
+car_params = CarParams()
+draw_params = DrawParams()
 app = Flask(__name__)
 
 
@@ -92,17 +94,30 @@ def generate_frame_response():
         )
 
 
-@app.post("/params")
-def set_params():
-    global params
+def update(type, data):
+    global car_params
+    if type == "car":
+        car_params.update_from_json(data)
+    if type == "draw":
+        draw_params.update_from_json(data)
+    else:
+        raise TypeError(type)
+
+
+@app.post("/params/<type>")
+def set_params(type: str):
     data = request.json
     resp = Response()
     try:
-        params.update_from_json(data)
+        update(type, data)
         resp.status_code = 200
     except KeyError as e:
         resp.status_code = 400
         resp.response = f"Key {str(e)} does not exist on the request."
+    except TypeError:
+        resp.status_code = 400
+        resp.response = f"Invalid params type: {str(type)}"
+
     return resp
 
 

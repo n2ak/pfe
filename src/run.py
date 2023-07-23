@@ -5,6 +5,7 @@ from main import Program
 from utils_ import seek_video
 from lane import MlLaneDetector, YoloLaneDetecor
 from car import CarDetector
+from drawer import Drawer
 
 
 def init_ml_lane_detector(frame_shape):
@@ -47,13 +48,23 @@ def main(host: str, port: str, use_async: bool = False):
 
     # ld = init_ml_lane_detector(initial_frame.shape[:2])
     # ld.init_polygon(config)
+    from server import car_params, draw_params
+
+    car_params.update_from_json({
+        "f": F,
+        "focal_length": FOCAL_LENGTH,
+        "frame_center_y": initial_frame.shape[1]//2,
+    })
+
     ld = YoloLaneDetecor()
-    car_d = CarDetector(F, FOCAL_LENGTH, initial_frame.shape[1]//2)
+    car_d = CarDetector(car_params)
+    drawer = Drawer(draw_params)
 
     # car_d = None
     p = Program(
         ld,
         car_d,
+        drawer,
         use_async=use_async,
         frame_ratio=2,
         draw=True,

@@ -1,5 +1,5 @@
 
-from .base import LaneDetectorBase
+from base import LaneDetectorBase
 
 
 class YoloLaneDetecor(LaneDetectorBase):

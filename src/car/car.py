@@ -1,7 +1,6 @@
-from utils_ import get_object_distance, load_yolo, draw_text_with_backgraound
+from utils_ import get_object_distance, get_object_distance2, load_yolo, draw_text_with_backgraound
 import cv2
-import torch
-import os
+from .params import CarParams
 
 vehicule_classes = ["car", "truck", "bus"]
 
@@ -11,39 +10,26 @@ def is_vehicule(classes, c: str):
 
 
 class CarDetector:
-    CAR_MIN_DISTANCE = 30
-    AVG_CAR_WIDTH = 2.5
-
-    # cc = cv2.imread("../rsrc/cc.png")
-    # car_cascade_src = '../cars.xml'
-    # car_cascade = cv2.CascadeClassifier(car_cascade_src)
-
     VEHICULE_WIDTH: dict[str, float] = {
         "car": 2.5,
         "truck": 3,
         "bus": 3,
     }
 
-    def __init__(self, f, focal_length, frame_center_y: int, ratio=1) -> None:
-        self.f = f
-        self.focal_length = focal_length
-        self.ratio = ratio
-        self.close_cars = []
+    def __init__(self, params: CarParams, ratio=1) -> None:
+        self.model = Yolo(params.yolo_version)
         self.safe = True
+        self.close_cars = []
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
-        self.model = Yolo("yolov5")
-        self.frame_center_y = frame_center_y
+
+        self.params = params
 
     def detect(self, frame):
         self.safe = self.is_car_safe(frame)
 
     def is_car_in_front_close(self, distance):
-        # print(distance, self.CAR_MIN_DISTANCE * 1000)
-        return distance < self.CAR_MIN_DISTANCE * 1000
+        return distance < self.params.car_min_distance * 1000
 
-    # def detect_cars_in_front(self, frame):
-    #     frame = scale(self.cc, size=frame.shape[:2][::-1])  # TODO
-    #     return self.car_cascade.detectMultiScale(frame, 1.1, 1)
     def detect_cars_in_front(self, frame, return_distances=True):
         results = self.model.detect(frame)
         cars = []
@@ -68,8 +54,8 @@ class CarDetector:
         x, y, w, h, name = car
         center_y = int(x+w//2)
         offset = 100
-        in_front = (self.frame_center_y -
-                    offset) < center_y < (self.frame_center_y + offset)
+        c_y = self.params.frame_center_y
+        in_front = (c_y - offset) < center_y < (c_y + offset)
         # # TODO :add check
         # if in_front and (y+h) > (720-150):
         #     print("y+h", y+h)
@@ -77,7 +63,10 @@ class CarDetector:
 
     def calculate_distance(self, car):
         x, y, w, h, name = car
-        return get_object_distance(self.f, self.focal_length, w, self.estimated_vehicule_width(name)*1000, self.ratio)
+        f = self.params.f
+        real_width = self.estimated_vehicule_width(name)*1000
+        return get_object_distance2(f, w, real_width)
+        return get_object_distance(f, self.focal_length, w, real_width, self.params.ratio)
 
     def calculate_distances(self, cars):
         distances = []
@@ -100,8 +89,23 @@ class CarDetector:
                     safe = False
         return safe
 
+    # def draw(self, frame, close_cars):
+    #     return self.model.draw(frame, close_cars)
+
     def draw(self, frame, close_cars):
-        return self.model.draw(frame, close_cars)
+        for x, y, w, h, name, distance in close_cars:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            distance = int(distance)
+            distance_type = self.distance_type(distance)
+            draw_text_with_backgraound(
+                frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
+        return frame
+
+    def distance_type(self, distance):
+        if distance < 15_000:
+            return "very close"
+        if distance < 30_000:
+            return "close"
 
 
 class Yolo:
@@ -110,22 +114,5 @@ class Yolo:
         assert version in ["yolov5", "yolov8"]
         self.model = load_yolo(version, "../")
 
-    def distance_type(self, distance):
-        if distance < 15_000:
-            return "very close"
-        if distance < 30_000:
-            return "close"
-
     def detect(self, frame):
         return self.model(frame)
-
-    def draw(self, frame, close_cars):
-        for x, y, w, h, name, distance in close_cars:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            distance = int(distance)
-            distance_type = self.distance_type(distance)
-            # background = np.zeros_like(frmae, dtype=np.uint8)
-
-            draw_text_with_backgraound(
-                frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
-        return frame

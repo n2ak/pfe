@@ -4,7 +4,7 @@ from utils_ import *
 from param import *
 import numpy as np
 from typing import Tuple
-from .base import LaneDetectorBase
+from base import LaneDetectorBase
 
 N_WINDOWS = 10
 MARGIN = 100
