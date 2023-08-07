@@ -8,3 +8,4 @@ ultralytics_yolov5_master
 data
 **/*.pt
 **/*.pickle
+**/train*

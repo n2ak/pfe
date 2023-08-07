@@ -50,11 +50,13 @@ def init_polygon(config: dict, H: int):
     lane_width1 = config.get("lane_width1", 250)
     lane_center2 = config.get("lane_center2", 638), H
     lane_width2 = config.get("lane_width2", 800)
-    polygon = []
-    polygon.append((lane_center1[0]-lane_width1//2, lane_center1[1]))
-    polygon.append((lane_center1[0]+lane_width1//2, lane_center1[1]))
-    polygon.append((lane_center2[0]+lane_width2//2, lane_center2[1]))
-    polygon.append((lane_center2[0]-lane_width2//2, lane_center2[1]))
+    offset = config["offset"]
+    top_left = lane_center1[0]-lane_width1//2, lane_center1[1]
+    top_right = lane_center1[0]+lane_width1//2, lane_center1[1]
+    bottom_right = lane_center2[0]+lane_width2//2, lane_center2[1] - offset
+    bottom_left = lane_center2[0]-lane_width2//2, lane_center2[1] - offset
+
+    polygon = [top_left,top_right,bottom_right,bottom_left]
     polygon = np.array(polygon)
     return np.array([polygon], dtype=np.int32)
 
@@ -453,34 +455,22 @@ def combine(image, original, use_bitwise=True):
     return image
 
 
-def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, gama=1.0):
+def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, gama=1.0, draw_lines=False):
     if len(xs[0]) != len(xs[1]) != len(ys):
         return image
+    right,left = xs
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-
-    for index in range(0, len(xs[0]) - 1, step):
-        step_ = min(index+step, len(ys)-1)
-        p1 = (int(xs[0][index]), int(ys[index]))
-        p2 = (int(xs[1][index]), int(ys[index]))
-        p3 = (int(xs[1][step_]), int(ys[step_]))
-        p4 = (int(xs[0][step_]), int(ys[step_]))
-        x, y, h, w = p1[0], p1[1], step, p2[0]-p1[0]
-        x = max(x, 0)
-        y = max(y, 0)
-        w = max(w, 0)
-        # print(x, y, h, w)
-        sub_img = image[y:y+h, x:x+w]
-        shape = *sub_img.shape[:-1], 1
-        white_rect = np.tile(color, shape).astype(sub_img.dtype)
-        res = cv2.addWeighted(sub_img,  alpha, white_rect, beta, gama)
-        if res is not None:
-            image[y:y+h, x:x+w] = res
-
-        cv2.line(image, p1, p4, (0, 0, 255), 30)
-        cv2.line(image, p2, p3, (0, 0, 255), 30)
-
-    return image
+        # show_img(image)
+    prev = None
+    for r,l,y in list(zip(right,left,ys))[::step]:
+        curr = [l, y], [r, y]
+        if prev is not None:
+            points = [np.array([*curr, *prev],dtype=np.int32)]
+            cv2.fillPoly(image, points, color)
+            # cv2.drawContours(image, points, -1, color, thickness=cv2.FILLED)
+        prev = [r, y],[l, y]
+    return image 
 
 
 def get_curvatures(image, RECENTER_MINPIX, n_windows=10, margin=50):
