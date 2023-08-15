@@ -1,6 +1,9 @@
+# TODO : draw nothing when no lanes are detected for to many frames
+
+
 from server import Server
 from multiprocessing import Queue, Process
-from utils_ import read_video, put_text, draw_text_with_backgraound, car_detect_one_frame, lane_detect_one_frame, show_window, draw_main_window
+from utils_ import read_video
 from lane import LaneDetectorBase
 from car import CarDetector
 import cv2
@@ -112,7 +115,7 @@ class Program:
                     sys.exit()
                     break
 
-                self.on, frame = read_video(video, size=(640, 384))
+                self.on, frame = read_video(video, )  # size=(640, 384))
                 if not self.on:
                     break
                 frame = self.runner_func(frame)

@@ -9,6 +9,7 @@ RED = np.array([255, 0, 0])/255
 
 
 class YoloLaneDetecor(LaneDetectorBase):
+
     def __init__(
         self,
         CAR_CENTER,
@@ -25,11 +26,17 @@ class YoloLaneDetecor(LaneDetectorBase):
         self._ready = False
 
     def draw(self, frame):
+        h, w = frame.shape[:2]
+
         if not self._ready:
             return frame
         left, right, ys, in_lane = self.left, self.right, self.ys, self.in_lane
-
+        left = scale(left, w)
+        right = scale(right, w)
+        ys = scale(ys, h)
+        print(3, left[:3])
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
+
         car_center, threshold = self.CAR_CENTER, self.LANE_THRESHOLD
 
         out = draw_lane_zone_transp(
@@ -37,12 +44,11 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         lane_center = (left_lane + right_lane) // 2
 
-        h, w = out.shape[:2]
         ccr = car_center+threshold
         ccl = car_center-threshold
-        ht = h-40
-        hm = h-50
-        hb = h-60
+        ht = h - 40
+        hm = h - 50
+        hb = h - 60
 
         cv2.line(out, (ccr, hm), (ccl, hm), 0, 5)
         cv2.line(out, (ccr, hb), (ccr, ht), 0, 5)
@@ -64,8 +70,16 @@ class YoloLaneDetecor(LaneDetectorBase):
             draw_masks_on_image(mask, [zip(*o[::-1])], color=colors[i])
 
         left, right, ys, dirs = get_curvatures2(mask, [1, 2], 1, range=[0, -1])
+
         if len(left) == 0 or len(right) == 0:
             return None
+
+        H, W = res.masks.data[0].shape
+        print(1, left[:3])
+        left = normalize(left, W)
+        right = normalize(right, W)
+        ys = normalize(ys, H)
+        print(2, 3, left[:3])
 
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
@@ -95,6 +109,18 @@ def lane_departure_warning(left_lane, right_lane, car_center, threshold):
     in_lane = lateral_position < threshold
 
     return lateral_position, in_lane
+
+
+def normalize(var, by):
+    if isinstance(var, list):
+        return [var[i]/by for i in range(len(var))]
+    return var/by
+
+
+def scale(var, to):
+    if isinstance(var, list):
+        return [int(var[i]*to) for i in range(len(var))]
+    return int(var*to)
 
 
 def draw_lane_zone_transp(image, left, right, ys, opacity=.75, color=(0, 1, 0)):

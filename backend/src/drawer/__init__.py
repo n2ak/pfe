@@ -13,11 +13,6 @@ class Drawer():
 
     def draw(self, frame, car_detector, lane_detector):
         from utils_ import draw_text_with_backgraound
-        # if car_detector.safe:
-        #     if self.params.renderLane:
-        #         frame = lane_detector.draw(frame)
-        # if self.params.renderCarBox:
-        #     frame = car_detector.draw(frame)
         frame = lane_detector.draw(frame)
         frame = car_detector.draw(frame)
 
