@@ -11,6 +11,10 @@ cv = cv2
 def circle_at(ee, p): cv2.circle(ee, p, 30, (255, 255, 255))
 
 
+def read_rgb(path):
+    return cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
+
+
 def draw_text_with_backgraound(frame, texts: str, x, y, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=.8, font_thickness=2, offset=20):
     texts = texts.split("\n")
     for text in texts:

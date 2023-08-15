@@ -4,14 +4,13 @@
 from server import Server
 from multiprocessing import Queue, Process
 from utils_ import read_video
-from lane import LaneDetectorBase
-from car import CarDetector
 import cv2
 import numpy as np
 import time
 from param import *
 from drawer import Drawer
-# from workers import LaneWorker, CarWorker, DrawWorker, lane_detect_one_frame, car_detect_one_frame, draw_main_window
+from typing import List
+from base import ADASystem
 
 
 def simple_on_danger(*x):
@@ -26,8 +25,7 @@ class Program:
 
     def __init__(
         self,
-        lane_d: LaneDetectorBase,
-        car_d: CarDetector,
+        systems: List[ADASystem],
         drawer: Drawer,
         server: Server,
         use_async=False,
@@ -37,12 +35,11 @@ class Program:
         draw_lines=True,
         show_windows=False,
     ) -> None:
+        self.systems = systems
         self.use_async = use_async
         self.frame_ratio = frame_ratio
         self.on_danger = on_danger
-        self.lane_d = lane_d
         self.drawer = drawer
-        self.car_d = car_d
         self.draw = draw
         self.draw_lines = draw_lines
         self.show_windows = show_windows
@@ -71,36 +68,29 @@ class Program:
         cv2.destroyAllWindows()
 
     def run_sync(self, frame):
-        # car_data, lane_data = None, None
         if self._worker_free is True:
-            # print("="*10, "frame", type(frame))
             self.detectionWorker.q_in.put(frame)
             self._worker_free = False
-        # ret = False
         if not self.detectionWorker.q_out.empty():
-            car_data, lane_data = self.detectionWorker.q_out.get()
-            self.car_d._update(car_data)
-            self.lane_d._update(lane_data)
+            datas = self.detectionWorker.q_out.get()
+            assert len(datas) == len(self.systems)
+            for data, system in zip(datas, self.systems):
+                system.update_state(data)
             self._worker_free = True
         if self.draw:
-            # print("Drawwing")
             frame = self.drawer.draw(
                 frame,
-                self.car_d,
-                self.lane_d,
+                self.systems,
             )
         return frame
 
     def run(self, video, frame_count):
-        (self.cars, self.cars_safe) = ([], True)
-        (self.lanes, self.lanes_safe) = (None, True)
 
         if self.use_async:
             self.start()
         else:
             self.detectionWorker = DetectionWorker(
-                self.car_d,
-                self.lane_d
+                self.systems
             )
             self.detectionWorker.start()
             assert self.detectionWorker.q_out.get() == "Started"
@@ -142,69 +132,28 @@ class Program:
     def run_server(self, host, port):
         Server.run_server(host, port)
 
-    # def init_workers(self):
-    #     from workers import DrawWorker, LaneWorker, CarWorker
-    #     if self.draw:
-    #         self.window_names.append("Perp")
-    #         self.draw_worker = DrawWorker(self.frame_ratio, self.window_names)
-    #         print("Waiting for draw to start")
-    #     self.lane_worker = LaneWorker(self.lane_d)
-    #     self.car_worker = CarWorker(self.car_d)
-        # self.network = WebsocketWorker("0.0.0.0", 9999)
-
-    # def run_worker(self, frame):
-    #     l_w, c_w = self.lane_worker, self.car_worker
-    #     f = frame.copy()
-    #     c_w.q.put(("detect", frame))
-    #     safe = c_w.q2.get()
-    #     if safe:
-    #         l_w.q.put(("detect", frame))
-
-    #         l_w.q.put(("draw", frame))
-    #         frame, lines = l_w.q2.get()
-    #         print("shape", lines.shape)
-    #     else:
-    #         lines = np.zeros(frame.shape)
-    #     c_w.q.put(("draw", frame))
-    #     frame = c_w.q2.get()
-
-    #     # self.network.q.put(frame)
-    #     if self.draw:
-    #         frames = [frame,]
-    #         if self.draw_lines:
-    #             frames.append(lines)
-    #         self.draw_worker.q.put(frames)
-    #         got = self.draw_worker.q2.get()
-    #         return got is None
-    #     return False
-
 
 class DetectionWorker:
-    def __init__(self, car_d: CarDetector, lane_d: LaneDetectorBase, args=()) -> None:
+    def __init__(self, systems: List[ADASystem], args=()) -> None:
         self.q_in = Queue()
         self.q_out = Queue()
         args = (self.q_in, self.q_out, *args)
         self.p = Process(target=self.main, args=args)
         self.p.daemon = True
-        self.car_detecor, self.lane_detector = car_d, lane_d
+        self.systems = systems
 
     def main(self, q_in: Queue, q_out: Queue):
-        car_detecor, lane_detector = self.car_detecor, self.lane_detector
-        # print("="*20, "Started Worker")
         i = 0
         q_out.put("Started")
-        car_data = None
-        lane_data = None
         while True:
             i += 1
             in_ = q_in.get()
             if in_ is None:
                 break
             frame = in_
-            car_data = car_detecor.detect(frame)
-            if (car_detecor is not None) and car_detecor.safe:
-                lane_data = lane_detector.pipeline(frame)
-            q_out.put((car_data, lane_data))
+
+            datas = [system.tick(frame) for system in self.systems]
+            q_out.put(datas)
 
             time.sleep(.05)
             if (i % 100) == 0:

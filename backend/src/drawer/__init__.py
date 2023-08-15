@@ -2,6 +2,8 @@
 import time
 import numpy as np
 from .params import DrawParams
+from base import ADASystem
+from typing import List
 
 
 class Drawer():
@@ -11,12 +13,13 @@ class Drawer():
         self.params = params
         self.prev_time = time.time()-1
 
-    def draw(self, frame, car_detector, lane_detector):
+    def draw(self, frame, systems: List[ADASystem]):
         from utils_ import draw_text_with_backgraound
-        frame = lane_detector.draw(frame)
-        frame = car_detector.draw(frame)
+        for system in systems:
+            frame = system.draw(frame)
 
-        safe = car_detector.safe and lane_detector.safe
+        safe = all([system.is_safe() for system in systems])
+        # safe = car_detector.safe and lane_detector.safe
 
         fps = self.update_fps()
         text = f"FPS: {int(fps)}\nSafe: {safe}"

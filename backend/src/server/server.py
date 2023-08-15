@@ -1,4 +1,4 @@
-from car import CarParams
+from detectors.car import CarParams
 from drawer import DrawParams
 import cv2
 import threading

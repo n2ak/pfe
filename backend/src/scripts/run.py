@@ -2,9 +2,7 @@ import cv2
 import time
 from param import *
 from main import Program
-from utils_ import seek_video
-from lane import MlLaneDetector, YoloLaneDetecor
-from car import CarDetector
+from adas import LaneDepartureWarningSystem, ForwardCollisionWarningSystem
 from drawer import Drawer
 
 
@@ -17,16 +15,16 @@ def init_ml_lane_detector(frame_shape):
         TrackbarParam("Canny trshd 1", PARAMS_WINDOW, 100, 255),
         TrackbarParam("Canny trshd 2", PARAMS_WINDOW, 100, 255)
     )
-    return MlLaneDetector(
-        frame_shape,
-        use_bitwise=use_bitwise,
-        draw_roi=draw_roi,
-        show_perp_lines=False,
-        color_threshold=color_threshold,
-        window_size_ratio=2,
-        use_canny=use_canny,
-        canny_thresholds=canny_thresholds
-    )
+    # return MlLaneDetector(
+    #     frame_shape,
+    #     use_bitwise=use_bitwise,
+    #     draw_roi=draw_roi,
+    #     show_perp_lines=False,
+    #     color_threshold=color_threshold,
+    #     window_size_ratio=2,
+    #     use_canny=use_canny,
+    #     canny_thresholds=canny_thresholds
+    # )
 
 
 def main(host: str, port: str, use_async: bool = False):
@@ -57,16 +55,17 @@ def main(host: str, port: str, use_async: bool = False):
         "frame_center_y": initial_frame.shape[1]//2,
     })
 
-    ld = YoloLaneDetecor(
-        CAR_CENTER=w//2,
-        LANE_THRESHOLD=100,
-    )
-    car_d = CarDetector(server.car_params)
+    systems = [
+        ForwardCollisionWarningSystem(server.car_params),
+        LaneDepartureWarningSystem(
+            car_center=w//2,
+            lane_threshold=100,
+        ),
+    ]
     drawer = Drawer(server.draw_params)
 
     p = Program(
-        ld,
-        car_d,
+        systems,
         drawer,
         server,
         use_async=use_async,
