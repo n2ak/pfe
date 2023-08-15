@@ -19,8 +19,8 @@ class ParamsBase:
                     f"${self.__class__.__name__} , Unknown key: {k}")
             self.PARAMS[k] = data[k]
         import json
-        print("Update params:")
-        print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
+        # print("Update params:")
+        # print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
 
     def get_porperty(self, name):
         assert name in self.PARAMS.keys()

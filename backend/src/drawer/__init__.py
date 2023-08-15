@@ -11,16 +11,18 @@ class Drawer():
         self.params = params
         self.prev_time = time.time()-1
 
-    def draw(self, frame, car_detector, lane_detector, cars, cars_safe, lanes, lanes_safe):
+    def draw(self, frame, car_detector, lane_detector):
         from utils_ import draw_text_with_backgraound
+        # if car_detector.safe:
+        #     if self.params.renderLane:
+        #         frame = lane_detector.draw(frame)
+        # if self.params.renderCarBox:
+        #     frame = car_detector.draw(frame)
+        frame = lane_detector.draw(frame)
+        frame = car_detector.draw(frame)
 
-        if cars_safe:
-            if self.params.renderLane:
-                frame = lane_detector.draw(frame, lanes)
-        if self.params.renderCarBox:
-            frame = car_detector.draw(frame, cars)
+        safe = car_detector.safe and lane_detector.safe
 
-        safe = cars_safe and lanes_safe
         fps = self.update_fps()
         text = f"FPS: {int(fps)}\nSafe: {safe}"
         draw_text_with_backgraound(

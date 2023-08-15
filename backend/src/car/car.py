@@ -1,6 +1,7 @@
-from utils_ import get_object_distance, get_object_distance2, load_yolo, draw_text_with_backgraound
+from utils_ import get_object_distance, get_object_distance2, draw_text_with_backgraound
 import cv2
 from .params import CarParams
+from yolo import Yolo
 
 vehicule_classes = ["car", "truck", "bus"]
 
@@ -17,15 +18,15 @@ class CarDetector:
     }
 
     def __init__(self, params: CarParams, ratio=1) -> None:
+        assert params.yolo_version in ["yolov5", "yolov8"]
+
         self.model = Yolo(params.yolo_version)
         self.safe = True
         self.close_cars = []
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
 
         self.params = params
-
-    def detect(self, frame):
-        self.safe = self.is_car_safe(frame)
+        self._ready = False
 
     def is_car_in_front_close(self, distance):
         return distance < self.params.car_min_distance * 1000
@@ -92,8 +93,10 @@ class CarDetector:
     # def draw(self, frame, close_cars):
     #     return self.model.draw(frame, close_cars)
 
-    def draw(self, frame, close_cars):
-        for x, y, w, h, name, distance in close_cars:
+    def draw(self, frame):
+        if not self._ready:
+            return frame
+        for x, y, w, h, name, distance in self.close_cars:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
             distance = int(distance)
             distance_type = self.distance_type(distance)
@@ -107,12 +110,16 @@ class CarDetector:
         if distance < 30_000:
             return "close"
 
-
-class Yolo:
-    def __init__(self, version: str) -> None:
-        version = version.lower()
-        assert version in ["yolov5", "yolov8"]
-        self.model = load_yolo(version, "../")
-
     def detect(self, frame):
-        return self.model(frame)
+        self.safe = self.is_car_safe(frame)
+        return self.close_cars, self.safe
+
+    def _update(self, data):
+        self._ready = True
+        if data is None:
+            self._ready = False
+            return
+        self.close_cars, self.safe = data
+
+    # def ready(self):
+    #     return len(self.close_cars) != 0

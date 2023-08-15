@@ -56,7 +56,7 @@ def init_polygon(config: dict, H: int):
     bottom_right = lane_center2[0]+lane_width2//2, lane_center2[1] - offset
     bottom_left = lane_center2[0]-lane_width2//2, lane_center2[1] - offset
 
-    polygon = [top_left,top_right,bottom_right,bottom_left]
+    polygon = [top_left, top_right, bottom_right, bottom_left]
     polygon = np.array(polygon)
     return np.array([polygon], dtype=np.int32)
 
@@ -458,19 +458,19 @@ def combine(image, original, use_bitwise=True):
 def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, gama=1.0, draw_lines=False):
     if len(xs[0]) != len(xs[1]) != len(ys):
         return image
-    right,left = xs
+    right, left = xs
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         # show_img(image)
     prev = None
-    for r,l,y in list(zip(right,left,ys))[::step]:
+    for r, l, y in list(zip(right, left, ys))[::step]:
         curr = [l, y], [r, y]
         if prev is not None:
-            points = [np.array([*curr, *prev],dtype=np.int32)]
+            points = [np.array([*curr, *prev], dtype=np.int32)]
             cv2.fillPoly(image, points, color)
             # cv2.drawContours(image, points, -1, color, thickness=cv2.FILLED)
-        prev = [r, y],[l, y]
-    return image 
+        prev = [r, y], [l, y]
+    return image
 
 
 def get_curvatures(image, RECENTER_MINPIX, n_windows=10, margin=50):
@@ -496,6 +496,19 @@ def seek_video(video, seconds):
     frame_to_seek_to = seconds * fps
     assert frame_to_seek_to < total_frames, f"{frame_to_seek_to} < {total_frames}?"
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_to_seek_to)
+
+
+def read_video(video: cv2.VideoCapture, cvt=None, size=None, rotate=None):
+    on, frame = video.read()
+    if on:
+        if rotate is not None:
+            frame = cv2.rotate(frame, rotate)
+        if size is not None:
+            frame = cv2.resize(frame, size)
+        if cvt is not None:
+            frame = cv2.cvtColor(frame, cvt)
+
+    return on, frame
 
 
 def canny(image, t1, t2):
@@ -530,10 +543,3 @@ def timed_function(func):
         print(f"Function ran: {name} in {end - start:.2} sec")
         return res
     return func_w
-
-
-def load_yolo(version: str, base=None):
-    import torch
-    if base is not None:
-        torch.hub.set_dir(base)
-    return torch.hub.load(f'ultralytics/{version}', f'{version}s')

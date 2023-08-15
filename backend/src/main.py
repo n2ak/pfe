@@ -1,4 +1,6 @@
-from utils_ import put_text, draw_text_with_backgraound, car_detect_one_frame, lane_detect_one_frame, show_window, draw_main_window
+from server import Server
+from multiprocessing import Queue, Process
+from utils_ import read_video, put_text, draw_text_with_backgraound, car_detect_one_frame, lane_detect_one_frame, show_window, draw_main_window
 from lane import LaneDetectorBase
 from car import CarDetector
 import cv2
@@ -24,6 +26,7 @@ class Program:
         lane_d: LaneDetectorBase,
         car_d: CarDetector,
         drawer: Drawer,
+        server: Server,
         use_async=False,
         frame_ratio=2,
         on_danger=simple_on_danger,
@@ -41,6 +44,7 @@ class Program:
         self.draw_lines = draw_lines
         self.show_windows = show_windows
         self.window_names = ["Main"]
+        self.server = server
 
         if use_async:
             self.init_workers()
@@ -63,35 +67,31 @@ class Program:
         # self.detectionWorker.p.close()
         cv2.destroyAllWindows()
 
-    def forward_to_server(self, frame):
-        from server import set_frame
-        set_frame(frame)
-
     def run_sync(self, frame):
+        # car_data, lane_data = None, None
         if self._worker_free is True:
             # print("="*10, "frame", type(frame))
             self.detectionWorker.q_in.put(frame)
             self._worker_free = False
         # ret = False
         if not self.detectionWorker.q_out.empty():
-            (self.cars, self.cars_safe), (self.lanes,
-                                          self.lanes_safe) = self.detectionWorker.q_out.get()
+            car_data, lane_data = self.detectionWorker.q_out.get()
+            self.car_d._update(car_data)
+            self.lane_d._update(lane_data)
             self._worker_free = True
         if self.draw:
+            # print("Drawwing")
             frame = self.drawer.draw(
                 frame,
                 self.car_d,
                 self.lane_d,
-                self.cars,
-                self.cars_safe,
-                self.lanes,
-                self.lanes_safe
             )
         return frame
 
     def run(self, video, frame_count):
         (self.cars, self.cars_safe) = ([], True)
         (self.lanes, self.lanes_safe) = (None, True)
+
         if self.use_async:
             self.start()
         else:
@@ -99,9 +99,9 @@ class Program:
                 self.car_d,
                 self.lane_d
             )
-            # self.detectionWorker.start()
-            # assert self.detectionWorker.q_out.get() == "Started"
-            # self._worker_free = True
+            self.detectionWorker.start()
+            assert self.detectionWorker.q_out.get() == "Started"
+            self._worker_free = True
         try:
             i = 0
             while True:
@@ -111,13 +111,17 @@ class Program:
                     import sys
                     sys.exit()
                     break
-                self.on, frame = video.read()
+
+                self.on, frame = read_video(video, size=(640, 384))
                 if not self.on:
                     break
-                # frame = self.runner_func(frame)
+                frame = self.runner_func(frame)
                 # if off:
                 #     break
-                self.forward_to_server(frame)
+                cv2.imshow("sss", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+                Server.set_frame(frame)
                 time.sleep(1/frame_count)
 
             time.sleep(.1)
@@ -133,8 +137,7 @@ class Program:
         t.start()
 
     def run_server(self, host, port):
-        from server import run_server
-        run_server(host, port)
+        Server.run_server(host, port)
 
     # def init_workers(self):
     #     from workers import DrawWorker, LaneWorker, CarWorker
@@ -175,7 +178,6 @@ class Program:
 
 class DetectionWorker:
     def __init__(self, car_d: CarDetector, lane_d: LaneDetectorBase, args=()) -> None:
-        from multiprocessing import Queue, Process
         self.q_in = Queue()
         self.q_out = Queue()
         args = (self.q_in, self.q_out, *args)
@@ -183,27 +185,24 @@ class DetectionWorker:
         self.p.daemon = True
         self.car_detecor, self.lane_detector = car_d, lane_d
 
-    def main(self, q_in, q_out):
+    def main(self, q_in: Queue, q_out: Queue):
         car_detecor, lane_detector = self.car_detecor, self.lane_detector
         # print("="*20, "Started Worker")
         i = 0
         q_out.put("Started")
+        car_data = None
+        lane_data = None
         while True:
             i += 1
             in_ = q_in.get()
             if in_ is None:
                 break
             frame = in_
-            car_detect_one_frame(car_detecor, frame)
+            car_data = car_detecor.detect(frame)
             if (car_detecor is not None) and car_detecor.safe:
-                pass
-                lane_detect_one_frame(lane_detector, frame)
-            q_out.put(
-                (
-                    (car_detecor.close_cars, car_detecor.safe),
-                    (lane_detector.lanes, lane_detector.safe)
-                )
-            )
+                lane_data = lane_detector.pipeline(frame)
+            q_out.put((car_data, lane_data))
+
             time.sleep(.05)
             if (i % 100) == 0:
                 print(f"{i} elements were processed")

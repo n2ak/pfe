@@ -39,33 +39,36 @@ def main(host: str, port: str, use_async: bool = False):
         "lane_center2": 700,
         "lane_width2": 350*2,
     }
-    src = "../rsrc/tanj.mp4"
+    src = r"F:\Master\S4\yolo_test\vids\projet11.mp4"
     video = cv2.VideoCapture(src)
-    seek_video(video, 2 * 60)
+    # seek_video(video, 2 * 60)
 
     on, initial_frame = video.read()
-    assert on, ""
-
+    assert on, f"No video Found '{src}'"
+    h, w = initial_frame.shape[:2]
     # ld = init_ml_lane_detector(initial_frame.shape[:2])
     # ld.init_polygon(config)
-    from server import car_params, draw_params
+    from server import Server
+    server = Server()
 
-    car_params.update_from_json({
+    server.car_params.update_from_json({
         "f": F,
         "focal_length": FOCAL_LENGTH,
         "frame_center_y": initial_frame.shape[1]//2,
     })
 
-    # ld = YoloLaneDetecor()
-    # car_d = CarDetector(car_params)
-    drawer = Drawer(draw_params)
+    ld = YoloLaneDetecor(
+        CAR_CENTER=w//2,
+        LANE_THRESHOLD=100,
+    )
+    car_d = CarDetector(server.car_params)
+    drawer = Drawer(server.draw_params)
 
-    ld = None
-    car_d = None
     p = Program(
         ld,
         car_d,
         drawer,
+        server,
         use_async=use_async,
         frame_ratio=2,
         draw=True,
@@ -78,7 +81,7 @@ def main(host: str, port: str, use_async: bool = False):
         p.run_server(host, port)
         time.sleep(5)
     except KeyboardInterrupt:
-        print("daoda")
+        print("Ending")
     except Exception as e:
         print("="*10, "Exception", e)
     _exit()

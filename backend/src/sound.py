@@ -3,27 +3,42 @@ import time
 from threading import Thread, Event
 import winsound
 
+
 class Sound:
-    def __init__(self, filepath='../Alarm-beeping-sound.wav', flags=winsound.SND_LOOP + winsound.SND_ASYNC) -> None:
-        self.e = Event()
-        self.t = Thread(target=self._play, args=())
+    def __init__(self, filepath='../Alarm-beeping-sound.wav', flags=winsound.SND_LOOP + winsound.SND_ASYNC, delai=.5) -> None:
         self.filepath = filepath
         self.flags = flags
+        self.is_on = False
+        self.delai = delai
+        self.refresh()
+
+    def refresh(self):
+        self.t = Thread(target=self._play, args=())
+        self.e = Event()
 
     def _play(self):
-        winsound.PlaySound(self.filepath,self.flags)
+        winsound.PlaySound(self.filepath, self.flags)
+
         while True:
             if self.e.is_set():
                 winsound.PlaySound(None, winsound.SND_PURGE)
                 break
-            time.sleep(.5)
+            time.sleep(self.delai)
 
     def start(self):
-        self.t.start()
+        if (self.is_on is False) and (self.t.is_alive() is False):
+            self.refresh()
+            self.t.start()
+            self.is_on = True
+
         # self.t.daemon()
 
     def stop(self):
-        self.e.set()
+        if self.is_on is True:
+            self.e.set()
+            self.is_on = False
+
+
 class Sound2:
     def __init__(self, filepath='../Alarm-beeping-sound.wav', flags=winsound.SND_LOOP + winsound.SND_ASYNC) -> None:
         self.e = Event()

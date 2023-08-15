@@ -150,12 +150,14 @@ def video_feed():
 
 
 def set_frame(frame):
+    return
     global _outputFrame, _frame_lock
     with _frame_lock:
         _outputFrame = frame
 
 
 def run_server(host, port):
+    # return
     app.run(
         host=host,
         port=port,
