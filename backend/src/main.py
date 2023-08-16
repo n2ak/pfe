@@ -51,7 +51,9 @@ class Program:
 
     def run_sync(self, frame):
         if self._worker_free is True:
-            self.detectionWorker.q_in.put(frame)
+            params = [system.get_param(ret_types=False).PARAMS
+                      for system in self.systems]
+            self.detectionWorker.q_in.put((frame, params))
             self._worker_free = False
         if not self.detectionWorker.q_out.empty():
             datas = self.detectionWorker.q_out.get()
@@ -123,9 +125,12 @@ class Program:
     def run_server(self, host, port, debug=True):
         Server.run_server(host, port, self, debug=debug,)
 
-    def get_params(self):
-        params = [system.get_param() for system in self.systems]
-        params = dict(params)
+    def get_params(self, ret_types=True):
+        params = [system.get_param(ret_types=ret_types)
+                  for system in self.systems]
+        if ret_types:
+            params = dict(params)
+            # params = "lane", params
         return params
 
 
@@ -146,8 +151,9 @@ class DetectionWorker:
             in_ = q_in.get()
             if in_ is None:
                 break
-            frame = in_
-
+            frame, params = in_
+            for param, system in zip(params, self.systems):
+                system.get_param(False).update(param)
             datas = [system.tick(frame) for system in self.systems]
             q_out.put(datas)
 

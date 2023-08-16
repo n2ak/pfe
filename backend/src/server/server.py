@@ -1,3 +1,7 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.main import Program
 from src.detectors.objects import ObjectDetectorParams
 from src.detectors.lane import YoloLaneDetecorParams
 from src.drawer import DrawParams
@@ -14,20 +18,9 @@ source = "./video2.mp4"
 _frame_count = 30
 _outputFrame = None
 _frame_lock = threading.Lock()
-# objects_params = ObjectDetectorParams()
-# print("Car", id(objects_params))
-# print(1)
-# draw_params = DrawParams()
-# yolo_lane_params = YoloLaneDetecorParams()
-# params_types = {
-# "car": objects_params.update_from_json,
-# "draw": draw_params.update_from_json,
-# "lane": yolo_lane_params.update_from_json,
-#
-# }
 app = Flask(__name__, template_folder='templates')
 
-# car_params_form = None
+# if
 
 _dummy_page = """
 <html>
@@ -40,7 +33,7 @@ _dummy_page = """
   </body>
 </html>
 """
-MAIN_PROGRAM = None
+MAIN_PROGRAM: Program = None
 
 
 @app.context_processor
@@ -185,7 +178,8 @@ def run_server(host, port, program, debug=False):
         port=port,
         debug=debug,
         use_reloader=debug,
-        threaded=debug
+        threaded=True,
+        processes=1,
     )
 
 

@@ -67,7 +67,7 @@
             const inputs = target.find("input");
             const val = {};
             let type = "";
-            console.log(inputs);
+            // console.log(inputs);
             Array.from(inputs).forEach(e => {
                 if (e.getAttribute("type") === "hidden") {
                     type = e.getAttribute("value");
@@ -79,8 +79,10 @@
             })
             const body = JSON.stringify(val);
             const url = "/params/" + type;
-            console.log({ url, body })
-            $.post(url, data = body).error(e => {
+            // console.log({ url, body })
+            $.post(url, data = body, (data) => {
+                console.log({ data });
+            }).error(e => {
                 console.error(e);
             });
         }

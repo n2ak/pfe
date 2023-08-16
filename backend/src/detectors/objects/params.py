@@ -6,17 +6,21 @@ _default_params: dict = {
     "f": F,
     "focal_length": FOCAL_LENGTH,
     "frame_center_y": 1,
-    # "renderCarBox": False,
     "yolo_version": "yolov5nu.pt",
-
     "car_min_distance": 40.0,
-    # "car_avg_width": 2.5,
+}
+_default_types: dict = {
+    "f": [float, int],
+    "focal_length": [float],
+    "frame_center_y": [float, int],
+    "yolo_version": [str],
+    "car_min_distance": [float],
 }
 
 
 class ObjectDetectorParams(ParamsBase):
-    def __init__(self, params: dict = _default_params) -> None:
-        super().__init__(params)
+    def __init__(self, params: dict = _default_params, types=_default_types) -> None:
+        super().__init__(params, types)
 
     @property
     def F(self): return self.get_porperty("f")

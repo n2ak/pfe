@@ -1,15 +1,25 @@
 from src.base.params import ParamsBase
 
+
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+
 _default_params = {
     "renderLines": False,
     "renderLane": False,
     "renderCarBox": False,
 }
+_default_types: dict = {
+    "renderLines": [str2bool],
+    "renderLane": [str2bool],
+    "renderCarBox": [str2bool],
+}
 
 
 class DrawParams(ParamsBase):
-    def __init__(self, params: dict = _default_params) -> None:
-        super().__init__(params)
+    def __init__(self, params: dict = _default_params, types=_default_types) -> None:
+        super().__init__(params, types)
 
     @property
     def RENDER_LINES(self): return self.get_porperty("renderLines")

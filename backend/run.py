@@ -86,10 +86,12 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
         show_windows=False,
     )
     frame_count = 30
+
     try:
         # p.run_as_thread(video, frame_count)
+        print("Running program", id(p))
         p.run_thread(p.run, (video, frame_count))
-        p.run_server(host, port, True)
+        p.run_server(host, port, False)
         time.sleep(5)
     except KeyboardInterrupt:
         print("Ending")

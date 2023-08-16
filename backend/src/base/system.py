@@ -1,4 +1,6 @@
 import abc
+from src.base.params import ParamsBase
+import typing
 
 
 class ADASystem(abc.ABC):
@@ -26,5 +28,5 @@ class ADASystem(abc.ABC):
         raise "Unimplemented"
 
     @abc.abstractmethod
-    def get_param(self):
+    def get_param(self, ret_types=True) -> typing.Union[typing.Tuple[str, ParamsBase], ParamsBase]:
         raise "Unimplemented"
