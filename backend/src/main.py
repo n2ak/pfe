@@ -46,9 +46,6 @@ class Program:
         if not use_async:
             self.runner_func = self.run_sync
 
-    def start(self):
-        pass
-
     def stop(self):
         cv2.destroyAllWindows()
 
@@ -124,7 +121,12 @@ class Program:
         t.start()
 
     def run_server(self, host, port, debug=True):
-        Server.run_server(host, port, debug=debug)
+        Server.run_server(host, port, self, debug=debug,)
+
+    def get_params(self):
+        params = [system.get_param() for system in self.systems]
+        params = dict(params)
+        return params
 
 
 class DetectionWorker:

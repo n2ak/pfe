@@ -13,10 +13,10 @@ class YoloLaneDetecorParams(ParamsBase):
         super().__init__(params)
 
     @property
-    def USE_POLY_FIT(self): self.get_porperty("use_poly_fit")
+    def USE_POLY_FIT(self): return self.get_porperty("use_poly_fit")
     @property
-    def CAR_CENTER(self): self.get_porperty("car_center")
+    def CAR_CENTER(self): return self.get_porperty("car_center")
     @property
-    def LANE_THRESHOLD(self): self.get_porperty("lane_threshold")
+    def LANE_THRESHOLD(self): return self.get_porperty("lane_threshold")
     @property
-    def WEIGHTS(self): self.get_porperty("weights")
+    def WEIGHTS(self): return self.get_porperty("weights")

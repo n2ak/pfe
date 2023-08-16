@@ -14,17 +14,17 @@ source = "./video2.mp4"
 _frame_count = 30
 _outputFrame = None
 _frame_lock = threading.Lock()
-objects_params = ObjectDetectorParams()
-print("Car", id(objects_params))
-print(1)
-draw_params = DrawParams()
-yolo_lane_params = YoloLaneDetecorParams()
-params_types = {
-    "car": objects_params.update_from_json,
-    "draw": draw_params.update_from_json,
-    "lane": yolo_lane_params.update_from_json,
-
-}
+# objects_params = ObjectDetectorParams()
+# print("Car", id(objects_params))
+# print(1)
+# draw_params = DrawParams()
+# yolo_lane_params = YoloLaneDetecorParams()
+# params_types = {
+# "car": objects_params.update_from_json,
+# "draw": draw_params.update_from_json,
+# "lane": yolo_lane_params.update_from_json,
+#
+# }
 app = Flask(__name__, template_folder='templates')
 
 # car_params_form = None
@@ -40,14 +40,17 @@ _dummy_page = """
   </body>
 </html>
 """
+MAIN_PROGRAM = None
 
 
 @app.context_processor
-def get_legacy_var():
-    params = objects_params,  draw_params, yolo_lane_params
-    types = params_types.keys()
+def vars():
+    global MAIN_PROGRAM
+    params = MAIN_PROGRAM.get_params()
+    params = params.items()
     names = [f'collapse{i}' for i in range(len(params))]
-    return dict(params=zip(names, types, params))
+    print(params)
+    return dict(params=zip(names, params))
 
 
 @app.route("/")
@@ -113,30 +116,32 @@ def generate_frame_response():
 
 
 def update(type, data):
-    global params_types
-    # print(type == "car", type, data)
-    assert type in params_types.keys()
-    _update = params_types[type]
+    global MAIN_PROGRAM
+    params = MAIN_PROGRAM.get_params()
+
+    assert type in params.keys()
+    _update = params[type]
     _update(data)
     print(f"Params for {type} are updated.")
 
 
 @app.get("/params/<type>")
 def get_params(type: str):
-    type = type.lower()
-    import json
-    resp = Response()
-    if type not in ["car", "draw"]:
-        resp.status_code = 400
-        resp.response = f"Invalid params type: {str(type)}"
-        return resp
-    params = {
-        "car": objects_params.PARAMS,
-        "draw": draw_params.PARAMS
-    }[type]
-    resp.response = json.dumps(params)
-    resp.status_code = 200
-    return resp
+    raise ""
+    # type = type.lower()
+    # import json
+    # resp = Response()
+    # if type not in ["car", "draw"]:
+    #     resp.status_code = 400
+    #     resp.response = f"Invalid params type: {str(type)}"
+    #     return resp
+    # params = {
+    #     "car": objects_params.PARAMS,
+    #     "draw": draw_params.PARAMS
+    # }[type]
+    # resp.response = json.dumps(params)
+    # resp.status_code = 200
+    # return resp
 
 
 @app.post("/params/<type>")
@@ -171,8 +176,9 @@ def set_frame(frame):
         _outputFrame = frame
 
 
-def run_server(host, port, debug=False):
-    # return
+def run_server(host, port, program, debug=False):
+    global MAIN_PROGRAM
+    MAIN_PROGRAM = program
     app.run(
         host=host,
         port=port,

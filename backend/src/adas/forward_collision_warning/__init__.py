@@ -22,6 +22,9 @@ class ForwardCollisionWarningSystem(ADASystem):
     def update_state(self, data):
         return self.model._update(data)
 
+    def get_param(self):
+        return "objects", self.model.params
+
     def report(self):
         near_objects = self.model.close_objects
         if not len(near_objects):

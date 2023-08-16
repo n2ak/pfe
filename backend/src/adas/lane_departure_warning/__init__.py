@@ -21,6 +21,9 @@ class LaneDepartureWarningSystem(ADASystem):
     def update_state(self, data):
         return self.model._update(data)
 
+    def get_param(self):
+        return "lane", self.model.params
+
     def report(self):
         return ""
         text = f"""

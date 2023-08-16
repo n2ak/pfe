@@ -3,7 +3,7 @@ import abc
 
 class ADASystem(abc.ABC):
     def __init__(self) -> None:
-        pass
+        self.model = None
 
     @abc.abstractmethod
     def tick(self, frame):
@@ -14,13 +14,17 @@ class ADASystem(abc.ABC):
         raise "Unimplemented"
 
     @abc.abstractmethod
-    def is_safe():
+    def is_safe(self):
         raise "Unimplemented"
 
     @abc.abstractmethod
-    def update_state():
+    def update_state(self, data):
         raise "Unimplemented"
 
     @abc.abstractmethod
-    def report():
+    def report(self):
+        raise "Unimplemented"
+
+    @abc.abstractmethod
+    def get_param(self):
         raise "Unimplemented"

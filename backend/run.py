@@ -4,6 +4,9 @@ import time
 from src.main import Program
 from src.adas import LaneDepartureWarningSystem, ForwardCollisionWarningSystem
 from src.drawer import Drawer
+from src.detectors.lane import YoloLaneDetecorParams
+from src.detectors.objects import ObjectDetectorParams
+from src.drawer import DrawParams
 
 
 # def init_ml_lane_detector(frame_shape):
@@ -50,23 +53,25 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
     # ld.init_polygon(config)
     from src.server import Server
     server = Server()
-
-    server.objects_params.update_from_json({
+    objects_params = ObjectDetectorParams()
+    objects_params.update_from_json({
         "f": F,
         "focal_length": FOCAL_LENGTH,
         "frame_center_y": initial_frame.shape[1]//2,
     })
-    server.yolo_lane_params.update_from_json({
+    yolo_lane_params = YoloLaneDetecorParams()
+    yolo_lane_params.update_from_json({
         "use_poly_fit": True,
     })
 
+    draw_params = DrawParams()
     systems = [
-        ForwardCollisionWarningSystem(server.objects_params),
-        # LaneDepartureWarningSystem(
-        #     server.yolo_lane_params
-        # ),
+        ForwardCollisionWarningSystem(objects_params),
+        LaneDepartureWarningSystem(
+            yolo_lane_params
+        ),
     ]
-    drawer = Drawer(server.draw_params)
+    drawer = Drawer(draw_params)
     from src.warning import Warner
     warner = Warner(use_sound=warn, log=log)
     p = Program(

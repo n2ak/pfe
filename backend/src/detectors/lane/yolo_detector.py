@@ -17,6 +17,7 @@ class YoloLaneDetecor(LaneDetectorBase):
         # weights=r"F:\Master\S4\main\backend\models\train4\best.pt"
     ) -> None:
         super().__init__()
+        print("Weights", params.WEIGHTS)
         self.model = Yolo(params.WEIGHTS, hub=False)
         self.lane = None
 
