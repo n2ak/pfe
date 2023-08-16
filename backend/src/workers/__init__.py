@@ -2,7 +2,7 @@ from typing import Callable
 import base64
 import asyncio
 import websockets
-from utils_ import show_window, put_text, scale, timed_function, car_detect_one_frame, lane_detect_one_frame
+from src.utils_ import show_window, put_text, scale, timed_function, car_detect_one_frame, lane_detect_one_frame
 from multiprocessing import Queue, Process
 
 from lane.ml_lane_detector import LaneDetector

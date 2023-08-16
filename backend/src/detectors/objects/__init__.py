@@ -1,0 +1,142 @@
+from .params import ObjectDetectorParams
+from src.utils_ import get_object_distance, get_object_distance2, draw_text_with_backgraound
+from src.yolo import Yolo
+import cv2
+from typing import List
+
+
+class ObjectInfo():
+    def __init__(self, type, distance, coords) -> None:
+        self.type = type
+        self.distance = distance
+        self.coords = coords
+
+
+class ObjectDetector:
+    OBJECTS_WIDTH: dict[str, float] = {
+        "car": 2.5,
+        "truck": 3,
+        "bus": 3,
+    }
+
+    def __init__(self, params: ObjectDetectorParams, ratio=1, objects: List[str] = []) -> None:
+        self.objects_to_detect = ["car", "truck", "bus"]
+        self.objects_to_detect.extend(objects)
+        # assert params.yolo_version in ["YOLOv5n.pt", "YOLOv8n.pt"]
+        for o in self.objects_to_detect:
+            assert o in self.OBJECTS_WIDTH.keys(), f"No width for {o}."
+
+        self.model = Yolo(params.yolo_version, hub=False)
+        self.safe = True
+        self.close_objects: List[ObjectInfo] = []
+        # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
+
+        self.params = params
+        self._ready = False
+
+    def detectable(self, type):
+        return (type in self.objects_to_detect)
+
+    def is_object_in_front_close(self, distance):
+        return distance < self.params.car_min_distance * 1000
+
+    def estimated_object_width(self, type):
+        # assert type in self.OBJECTS_WIDTH.keys()
+        return self.OBJECTS_WIDTH[type]
+
+    def is_object_in_front(self, object: ObjectInfo):
+        # return True
+        x, y, w, h = object.coords
+        center_y = int(x+w//2)
+        offset = 100
+        c_y = self.params.frame_center_y
+        in_front = (c_y - offset) < center_y < (c_y + offset)
+        # # TODO :add check
+        # if in_front and (y+h) > (720-150):
+        #     print("y+h", y+h)
+        import matplotlib.pyplot as plt
+        plt.plot()
+        return in_front
+
+    def calculate_distance(self, object: ObjectInfo):
+        (x, y, w, h), type = object.coords, object.type
+        f = self.params.f
+        real_width = self.estimated_object_width(type)*1000
+        return get_object_distance2(f, w, real_width)
+        return get_object_distance(f, self.focal_length, w, real_width, self.params.ratio)
+
+    def calculate_distances(self, objects):
+        distances = []
+        for object in objects:
+            distance = self.calculate_distance(object)
+            distances.append(distance)
+        return distances
+
+    def is_car_safe(self, frame):
+        objects = self.detect_objects_in_front(frame)
+        distances = self.calculate_distances(objects)
+        self.close_objects = []
+        for object, distance in zip(objects, distances):
+            distance = None
+            if self.is_object_in_front(object):
+                distance = self.calculate_distance(object)
+                object.distance = distance
+                if self.is_object_in_front_close(distance):
+                    self.close_objects.append(object)
+        return len(self.close_objects) == 0
+
+    # def draw(self, frame, close_objects):
+    #     return self.model.draw(frame, close_objects)
+    def detect_objects_in_front(self, frame, return_distances=True):
+        results = self.model.predict(frame)
+        objects: List[ObjectInfo] = []
+        for cls, object in zip(results.boxes.cls, results.boxes.xyxy.int().tolist()):
+            (x, y, w, h),  name = object, results.names[cls.item()]
+            if not self.detectable(name):
+                continue
+            if return_distances:
+                w = w - x
+                h = h - y
+            objects.append(
+                ObjectInfo(
+                    name,
+                    -1,
+                    (x, y, w, h),
+                ),
+            )
+
+        return objects
+
+    def draw(self, frame):
+        if not self._ready:
+            return frame
+        for object in self.close_objects:
+            (x, y, w, h), name, distance = object.coords, object.type, object.distance
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            distance = int(distance)
+            distance_type = self.distance_type(distance)
+            draw_text_with_backgraound(
+                frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
+        return frame
+
+    def distance_type(self, distance):
+        if distance < 15_000:
+            return "very close"
+        if distance < 30_000:
+            return "close"
+
+    def detect(self, frame):
+        self.safe = self.is_car_safe(frame)
+        return self.close_objects, self.safe
+
+    def _update(self, data):
+        self._ready = True
+        if data is None:
+            self._ready = False
+            return
+        self.close_objects, self.safe = data
+
+    def is_safe(self):
+        return self.safe
+    # def ready(self):
+    #     return len(self.close_objects) != 0

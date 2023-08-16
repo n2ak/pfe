@@ -1,10 +1,10 @@
 
 import cv2
-from utils_ import *
-from param import *
+from src.base.lane_detector import LaneDetectorBase
+from src.utils_ import *
+from src.param import *
 import numpy as np
 from typing import Tuple
-from base import LaneDetectorBase
 
 N_WINDOWS = 10
 MARGIN = 100

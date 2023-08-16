@@ -1,5 +1,5 @@
-from base import ADASystem
-from detectors.lane import YoloLaneDetecor
+from src.base.system import ADASystem
+from src.detectors.lane import YoloLaneDetecor
 
 
 class LaneDepartureWarningSystem(ADASystem):
@@ -17,7 +17,15 @@ class LaneDepartureWarningSystem(ADASystem):
         return self.model.draw(frame)
 
     def is_safe(self):
-        return self.model.safe
+        return self.model.is_safe()
 
     def update_state(self, data):
         return self.model._update(data)
+
+    def report(self):
+        return ""
+        text = f"""
+Lane Departure Warning System:
+        """
+
+        return text

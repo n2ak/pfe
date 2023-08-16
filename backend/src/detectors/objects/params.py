@@ -1,4 +1,5 @@
-from base import ParamsBase
+from src.base.params import ParamsBase
+
 F = 2800
 FOCAL_LENGTH = 4.74
 _default_params: dict = {
@@ -6,14 +7,14 @@ _default_params: dict = {
     "focal_length": FOCAL_LENGTH,
     "frame_center_y": 1,
     # "renderCarBox": False,
-    "yolo_version": "yolov5",
+    "yolo_version": "yolov5n.pt",
 
-    "car_min_distance": 30.0,
+    "car_min_distance": 40.0,
     "car_avg_width": 2.5,
 }
 
 
-class CarParams(ParamsBase):
+class ObjectDetectorParams(ParamsBase):
     def __init__(self, params: dict = _default_params) -> None:
         super().__init__(params)
 

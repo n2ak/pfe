@@ -1,7 +1,7 @@
 import abc
 
 
-class ADASystem:
+class ADASystem(abc.ABC):
     def __init__(self) -> None:
         pass
 
@@ -19,4 +19,8 @@ class ADASystem:
 
     @abc.abstractmethod
     def update_state():
+        raise "Unimplemented"
+
+    @abc.abstractmethod
+    def report():
         raise "Unimplemented"

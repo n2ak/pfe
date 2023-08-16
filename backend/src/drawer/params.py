@@ -1,4 +1,4 @@
-from base import ParamsBase
+from src.base.params import ParamsBase
 
 _default_params = {
     "renderLines": False,

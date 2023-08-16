@@ -1,16 +1,17 @@
 # TODO : draw nothing when no lanes are detected for to many frames
 
 
-from server import Server
+from typing import List
 from multiprocessing import Queue, Process
-from utils_ import read_video
 import cv2
 import numpy as np
 import time
-from param import *
-from drawer import Drawer
-from typing import List
-from base import ADASystem
+from src.utils_ import read_video
+from src.server import Server
+from src.param import *
+from src.drawer import Drawer
+from src.adas import ADASystem
+from src.warning import Warner
 
 
 def simple_on_danger(*x):
@@ -28,9 +29,9 @@ class Program:
         systems: List[ADASystem],
         drawer: Drawer,
         server: Server,
+        warner: Warner,
         use_async=False,
         frame_ratio=2,
-        on_danger=simple_on_danger,
         draw=True,
         draw_lines=True,
         show_windows=False,
@@ -38,7 +39,7 @@ class Program:
         self.systems = systems
         self.use_async = use_async
         self.frame_ratio = frame_ratio
-        self.on_danger = on_danger
+        self.warner = warner
         self.drawer = drawer
         self.draw = draw
         self.draw_lines = draw_lines
@@ -46,25 +47,13 @@ class Program:
         self.window_names = ["Main"]
         self.server = server
 
-        if use_async:
-            self.init_workers()
-
         if not use_async:
             self.runner_func = self.run_sync
 
     def start(self):
-        self.lane_worker.start()
-        self.car_worker.start()
+        pass
 
     def stop(self):
-        if self.use_async:
-            print("Stopping all workers")
-            self.lane_worker.stop()
-            self.car_worker.stop()
-            self.network.stop()
-            if self.draw:
-                self.draw_worker.stop()
-        # self.detectionWorker.p.close()
         cv2.destroyAllWindows()
 
     def run_sync(self, frame):
@@ -74,9 +63,17 @@ class Program:
         if not self.detectionWorker.q_out.empty():
             datas = self.detectionWorker.q_out.get()
             assert len(datas) == len(self.systems)
+            warning_source = None
             for data, system in zip(datas, self.systems):
                 system.update_state(data)
+                if (warning_source is None) and (not system.is_safe()):
+                    warning_source = system
+            if warning_source is not None:
+                self.warner.warn(warning_source)
+            else:
+                self.warner.stop()
             self._worker_free = True
+
         if self.draw:
             frame = self.drawer.draw(
                 frame,
@@ -109,6 +106,7 @@ class Program:
                 if not self.on:
                     break
                 frame = self.runner_func(frame)
+
                 # if off:
                 #     break
                 cv2.imshow("sss", frame)

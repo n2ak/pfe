@@ -1,5 +1,5 @@
-from detectors.car import CarParams
-from drawer import DrawParams
+from src.detectors.objects import ObjectDetectorParams
+from src.drawer import DrawParams
 import cv2
 import threading
 import time
@@ -13,7 +13,7 @@ source = "./video2.mp4"
 _frame_count = 30
 _outputFrame = None
 _frame_lock = threading.Lock()
-car_params = CarParams()
+car_params = ObjectDetectorParams()
 draw_params = DrawParams()
 app = Flask(__name__)
 

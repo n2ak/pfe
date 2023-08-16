@@ -1,8 +1,8 @@
-from base import LaneDetectorBase
-from yolo import Yolo
 import numpy as np
 import cv2
-from utils_ import draw_lane_zone
+from src.utils_ import draw_lane_zone
+from src.detectors.lane import LaneDetectorBase
+from src.yolo import Yolo
 
 GREEN = np.array([0, 255, 0])/255
 RED = np.array([255, 0, 0])/255
@@ -24,6 +24,7 @@ class YoloLaneDetecor(LaneDetectorBase):
         self.CAR_CENTER = CAR_CENTER
         self.LANE_THRESHOLD = LANE_THRESHOLD
         self._ready = False
+        self.in_lane = True
 
     def draw(self, frame):
         h, w = frame.shape[:2]
@@ -34,7 +35,6 @@ class YoloLaneDetecor(LaneDetectorBase):
         left = scale(left, w)
         right = scale(right, w)
         ys = scale(ys, h)
-        print(3, left[:3])
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
         car_center, threshold = self.CAR_CENTER, self.LANE_THRESHOLD
@@ -61,7 +61,6 @@ class YoloLaneDetecor(LaneDetectorBase):
 
     def pipeline(self, frame):
         res = self.model.predict(frame)
-        print(f"Detected {res.masks.data.shape[0]} lines")
         lines = get_lines(res.masks.data[:3])
         mask = np.zeros(frame.shape[:2])
 
@@ -75,11 +74,9 @@ class YoloLaneDetecor(LaneDetectorBase):
             return None
 
         H, W = res.masks.data[0].shape
-        print(1, left[:3])
         left = normalize(left, W)
         right = normalize(right, W)
         ys = normalize(ys, H)
-        print(2, 3, left[:3])
 
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
@@ -101,6 +98,9 @@ class YoloLaneDetecor(LaneDetectorBase):
             self._ready = False
             return
         self.left, self.right, self.ys, self.in_lane = data
+
+    def is_safe(self):
+        return self.in_lane
 
 
 def lane_departure_warning(left_lane, right_lane, car_center, threshold):
