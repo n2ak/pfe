@@ -39,6 +39,7 @@ class ObjectDetector:
         return (type in self.objects_to_detect)
 
     def is_object_in_front_close(self, distance):
+        # print("self.params.CAR_MIN_DISTANCE", self.params.CAR_MIN_DISTANCE)
         return distance < self.params.CAR_MIN_DISTANCE * 1000
 
     def estimated_object_width(self, type):

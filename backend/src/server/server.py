@@ -118,10 +118,10 @@ def generate_frame_response():
 def update(type, data):
     global MAIN_PROGRAM
     params = MAIN_PROGRAM.get_params()
-
     assert type in params.keys()
-    _update = params[type]
-    _update(data)
+    param = params[type]
+    print(param)
+    param.update_from_json(data)
     print(f"Params for {type} are updated.")
 
 
@@ -148,6 +148,7 @@ def get_params(type: str):
 def set_params(type: str):
     type = type.lower()
     data = request.get_json(force=True)  # .json
+    print("Data", data)
     resp = Response()
     try:
         update(type, data)

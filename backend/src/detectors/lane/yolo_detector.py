@@ -60,6 +60,8 @@ class YoloLaneDetecor(LaneDetectorBase):
 
     def pipeline(self, frame):
         res = self.model.predict(frame)
+        if res.masks is None:
+            return None
         lines = get_lines(res.masks.data[:3])
         mask = np.zeros(frame.shape[:2])
 
