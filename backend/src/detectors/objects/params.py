@@ -7,7 +7,7 @@ _default_params: dict = {
     "focal_length": FOCAL_LENGTH,
     "frame_center_y": 1,
     # "renderCarBox": False,
-    "yolo_version": "yolov5n.pt",
+    "yolo_version": "yolov5nu.pt",
 
     "car_min_distance": 40.0,
     # "car_avg_width": 2.5,

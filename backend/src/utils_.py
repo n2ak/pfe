@@ -379,7 +379,7 @@ def polynome(coeffs, y):
     return radius, res
 
 
-def fit_poly_one_side(image, indices, ys, nonzero):
+def fit_poly_one_side(indices, ys, nonzero):
     nonzeroy, nonzerox = nonzero
     if indices.shape == (0,):
         return []
@@ -394,10 +394,8 @@ def fit_poly(image, left_indices, right_indices):
 
     nonzero = np.array(image.nonzero())
     ys = np.linspace(0, image.shape[0]-1, image.shape[0])
-    radius_left, left_fitx = fit_poly_one_side(
-        image, left_indices, ys, nonzero)
-    radius_right, right_fitx = fit_poly_one_side(
-        image, right_indices, ys, nonzero)
+    radius_left, left_fitx = fit_poly_one_side(left_indices, ys, nonzero)
+    radius_right, right_fitx = fit_poly_one_side(right_indices, ys, nonzero)
 
     return radius_left, radius_right, left_fitx, right_fitx, ys
 
@@ -474,6 +472,7 @@ def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, 
             cv2.fillPoly(image, points, color)
             # cv2.drawContours(image, points, -1, color, thickness=cv2.FILLED)
         prev = [r, y], [l, y]
+
     return image
 
 

@@ -1,7 +1,7 @@
 from src.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
-from src.utils_ import draw_lane_zone
+from src.utils_ import draw_lane_zone, polynome
 from src.detectors.lane import LaneDetectorBase
 from src.yolo import Yolo
 
@@ -38,8 +38,7 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         car_center, threshold = self.params.CAR_CENTER, self.params.LANE_THRESHOLD
 
-        out = draw_lane_zone_transp(
-            frame, left, right, ys, opacity=.30, color=(0, 1, 0))
+        out = draw_lane_zone_transp(frame, left, right, ys, opacity=.30)
 
         lane_center = (left_lane + right_lane) // 2
 
@@ -71,6 +70,16 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         if len(left) == 0 or len(right) == 0:
             return None
+
+        if self.params.USE_POLY_FIT:
+            def fit(ys, ind, deg=2):
+                ind = np.polyfit(ys, ind, deg)
+                _, ind = polynome(ind, ys)
+                ind = ind.astype(int)
+                return ind
+            ys = np.array(ys)
+            left = fit(ys, left)
+            right = fit(ys, right)
 
         H, W = res.masks.data[0].shape
         left = normalize(left, W)
@@ -122,13 +131,21 @@ def scale(var, to):
     return int(var*to)
 
 
-def draw_lane_zone_transp(image, left, right, ys, opacity=.75, color=(0, 1, 0)):
-    mask = draw_lane_zone(np.zeros_like(
-        image), (right, left), ys, step=5).astype(np.float64)
+def draw_lane_zone_transp(image, left, right, ys, opacity=.75, lane_color=(0, 1, 0), line_color=(0, 0, 255), draw_lines=False, step=5):
+    mask = draw_lane_zone(np.zeros_like(image), (right, left),
+                          ys, step=step).astype(np.float64)
     mask /= 255.0
     mask *= opacity
-    green = np.ones(image.shape, dtype=np.float64)*color
-    return green*mask + (image/255)*(1.0-mask)
+    green = np.ones(image.shape, dtype=np.float64)*lane_color
+    green = green*mask + (image/255)*(1.0-mask)
+    if draw_lines:
+        prev = None
+        for r, l, y in list(zip(right, left, ys))[::step]:
+            if prev is not None:
+                cv2.line(green, (l, y), prev[1], line_color, 1)
+                cv2.line(green, (r, y), prev[0], line_color, 1)
+            prev = [r, y], [l, y]
+    return green
 
 
 def get_curvatures2(masks, indexes, step=3, range=[1, -2]):

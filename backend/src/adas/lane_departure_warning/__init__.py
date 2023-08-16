@@ -3,11 +3,10 @@ from src.detectors.lane import YoloLaneDetecor
 
 
 class LaneDepartureWarningSystem(ADASystem):
-    def __init__(self, car_center, lane_threshold) -> None:
+    def __init__(self, params) -> None:
         super().__init__()
         self.model = YoloLaneDetecor(
-            CAR_CENTER=car_center,
-            LANE_THRESHOLD=lane_threshold,
+            params=params,
         )
 
     def tick(self, frame):

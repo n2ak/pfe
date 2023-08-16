@@ -51,17 +51,19 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
     from src.server import Server
     server = Server()
 
-    server.car_params.update_from_json({
+    server.objects_params.update_from_json({
         "f": F,
         "focal_length": FOCAL_LENGTH,
         "frame_center_y": initial_frame.shape[1]//2,
     })
+    server.yolo_lane_params.update_from_json({
+        "use_poly_fit": True,
+    })
 
     systems = [
-        ForwardCollisionWarningSystem(server.car_params),
+        ForwardCollisionWarningSystem(server.objects_params),
         # LaneDepartureWarningSystem(
-        #     car_center=w//2,
-        #     lane_threshold=100,
+        #     server.yolo_lane_params
         # ),
     ]
     drawer = Drawer(server.draw_params)
@@ -80,8 +82,9 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
     )
     frame_count = 30
     try:
-        p.run_as_thread(video, frame_count)
-        p.run_server(host, port)
+        # p.run_as_thread(video, frame_count)
+        p.run_thread(p.run, (video, frame_count))
+        p.run_server(host, port, True)
         time.sleep(5)
     except KeyboardInterrupt:
         print("Ending")

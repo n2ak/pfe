@@ -14,10 +14,6 @@ from src.adas import ADASystem
 from src.warning import Warner
 
 
-def simple_on_danger(*x):
-    print("Danger")
-
-
 MAX = 9_000_000
 
 
@@ -109,9 +105,9 @@ class Program:
 
                 # if off:
                 #     break
-                cv2.imshow("sss", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+                # cv2.imshow("sss", frame)
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                # break
                 Server.set_frame(frame)
                 time.sleep(1/frame_count)
 
@@ -121,14 +117,14 @@ class Program:
         self.detectionWorker.stop()
         self.stop()
 
-    def run_as_thread(self, video, fps):
+    def run_thread(self, func, args):
         import threading
-        t = threading.Thread(target=self.run, args=(video, fps,))
+        t = threading.Thread(target=func, args=args)
         t.daemon = True
         t.start()
 
-    def run_server(self, host, port):
-        Server.run_server(host, port)
+    def run_server(self, host, port, debug=True):
+        Server.run_server(host, port, debug=debug)
 
 
 class DetectionWorker:

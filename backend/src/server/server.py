@@ -1,4 +1,5 @@
 from src.detectors.objects import ObjectDetectorParams
+from src.detectors.lane import YoloLaneDetecorParams
 from src.drawer import DrawParams
 import cv2
 import threading
@@ -13,10 +14,20 @@ source = "./video2.mp4"
 _frame_count = 30
 _outputFrame = None
 _frame_lock = threading.Lock()
-car_params = ObjectDetectorParams()
+objects_params = ObjectDetectorParams()
+print("Car", id(objects_params))
+print(1)
 draw_params = DrawParams()
-app = Flask(__name__)
+yolo_lane_params = YoloLaneDetecorParams()
+params_types = {
+    "car": objects_params.update_from_json,
+    "draw": draw_params.update_from_json,
+    "lane": yolo_lane_params.update_from_json,
 
+}
+app = Flask(__name__, template_folder='templates')
+
+# car_params_form = None
 
 _dummy_page = """
 <html>
@@ -31,10 +42,18 @@ _dummy_page = """
 """
 
 
+@app.context_processor
+def get_legacy_var():
+    params = objects_params,  draw_params, yolo_lane_params
+    types = params_types.keys()
+    names = [f'collapse{i}' for i in range(len(params))]
+    return dict(params=zip(names, types, params))
+
+
 @app.route("/")
 def index():
     # return the rendered template
-    return render_template("./index.html")
+    return render_template(r"index.html")
     return render_template_string(_dummy_page)
 
 
@@ -94,14 +113,11 @@ def generate_frame_response():
 
 
 def update(type, data):
-    global car_params
+    global params_types
     # print(type == "car", type, data)
-    if type == "car":
-        car_params.update_from_json(data)
-    elif type == "draw":
-        draw_params.update_from_json(data)
-    else:
-        raise TypeError(type)
+    assert type in params_types.keys()
+    _update = params_types[type]
+    _update(data)
     print(f"Params for {type} are updated.")
 
 
@@ -115,7 +131,7 @@ def get_params(type: str):
         resp.response = f"Invalid params type: {str(type)}"
         return resp
     params = {
-        "car": car_params.PARAMS,
+        "car": objects_params.PARAMS,
         "draw": draw_params.PARAMS
     }[type]
     resp.response = json.dumps(params)
@@ -126,7 +142,7 @@ def get_params(type: str):
 @app.post("/params/<type>")
 def set_params(type: str):
     type = type.lower()
-    data = request.json
+    data = request.get_json(force=True)  # .json
     resp = Response()
     try:
         update(type, data)
@@ -150,18 +166,19 @@ def video_feed():
 
 
 def set_frame(frame):
-    return
     global _outputFrame, _frame_lock
     with _frame_lock:
         _outputFrame = frame
 
 
-def run_server(host, port):
+def run_server(host, port, debug=False):
     # return
     app.run(
         host=host,
         port=port,
-        debug=True,
+        debug=debug,
+        use_reloader=debug,
+        threaded=debug
     )
 
 
