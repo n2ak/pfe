@@ -1,3 +1,4 @@
+from src.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
 from src.utils_ import draw_lane_zone
@@ -12,19 +13,17 @@ class YoloLaneDetecor(LaneDetectorBase):
 
     def __init__(
         self,
-        CAR_CENTER,
-        LANE_THRESHOLD,
-        weights=r"F:\Master\S4\main\backend\models\train4\best.pt"
+        params=YoloLaneDetecorParams(),
+        # weights=r"F:\Master\S4\main\backend\models\train4\best.pt"
     ) -> None:
         super().__init__()
-        self.model = Yolo(weights, hub=False)
+        self.model = Yolo(params.WEIGHTS, hub=False)
         self.lane = None
 
-        # TODO: as changeable params
-        self.CAR_CENTER = CAR_CENTER
-        self.LANE_THRESHOLD = LANE_THRESHOLD
         self._ready = False
         self.in_lane = True
+
+        self.params = params
 
     def draw(self, frame):
         h, w = frame.shape[:2]
@@ -37,7 +36,7 @@ class YoloLaneDetecor(LaneDetectorBase):
         ys = scale(ys, h)
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
-        car_center, threshold = self.CAR_CENTER, self.LANE_THRESHOLD
+        car_center, threshold = self.params.CAR_CENTER, self.params.LANE_THRESHOLD
 
         out = draw_lane_zone_transp(
             frame, left, right, ys, opacity=.30, color=(0, 1, 0))
@@ -83,8 +82,8 @@ class YoloLaneDetecor(LaneDetectorBase):
         pos, self.in_lane = lane_departure_warning(
             left_lane,
             right_lane,
-            self.CAR_CENTER,
-            self.LANE_THRESHOLD
+            self.params.CAR_CENTER,
+            self.params.LANE_THRESHOLD
         )
 
         return left, right, ys, self.in_lane

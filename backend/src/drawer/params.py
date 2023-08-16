@@ -12,8 +12,8 @@ class DrawParams(ParamsBase):
         super().__init__(params)
 
     @property
-    def renderLines(self): self.get_porperty("renderLines")
+    def RENDER_LINES(self): self.get_porperty("renderLines")
     @property
-    def renderLane(self): self.get_porperty("renderLane")
+    def RENDER_LANE(self): self.get_porperty("renderLane")
     @property
-    def renderCarBox(self): self.get_porperty("renderCarBox")
+    def RENDER_CAR_BOX(self): self.get_porperty("renderCarBox")

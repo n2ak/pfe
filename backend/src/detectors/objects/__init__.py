@@ -26,7 +26,7 @@ class ObjectDetector:
         for o in self.objects_to_detect:
             assert o in self.OBJECTS_WIDTH.keys(), f"No width for {o}."
 
-        self.model = Yolo(params.yolo_version, hub=False)
+        self.model = Yolo(params.WEIGHTS, hub=False)
         self.safe = True
         self.close_objects: List[ObjectInfo] = []
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
@@ -38,7 +38,7 @@ class ObjectDetector:
         return (type in self.objects_to_detect)
 
     def is_object_in_front_close(self, distance):
-        return distance < self.params.car_min_distance * 1000
+        return distance < self.params.CAR_MIN_DISTANCE * 1000
 
     def estimated_object_width(self, type):
         # assert type in self.OBJECTS_WIDTH.keys()
@@ -49,7 +49,7 @@ class ObjectDetector:
         x, y, w, h = object.coords
         center_y = int(x+w//2)
         offset = 100
-        c_y = self.params.frame_center_y
+        c_y = self.params.FRAME_CENTER_Y
         in_front = (c_y - offset) < center_y < (c_y + offset)
         # # TODO :add check
         # if in_front and (y+h) > (720-150):
@@ -60,7 +60,7 @@ class ObjectDetector:
 
     def calculate_distance(self, object: ObjectInfo):
         (x, y, w, h), type = object.coords, object.type
-        f = self.params.f
+        f = self.params.F
         real_width = self.estimated_object_width(type)*1000
         return get_object_distance2(f, w, real_width)
         return get_object_distance(f, self.focal_length, w, real_width, self.params.ratio)
@@ -85,8 +85,6 @@ class ObjectDetector:
                     self.close_objects.append(object)
         return len(self.close_objects) == 0
 
-    # def draw(self, frame, close_objects):
-    #     return self.model.draw(frame, close_objects)
     def detect_objects_in_front(self, frame, return_distances=True):
         results = self.model.predict(frame)
         objects: List[ObjectInfo] = []
