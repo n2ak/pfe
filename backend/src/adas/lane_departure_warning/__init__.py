@@ -12,8 +12,8 @@ class LaneDepartureWarningSystem(ADASystem):
     def tick(self, frame):
         return self.model.pipeline(frame)
 
-    def draw(self, frame):
-        return self.model.draw(frame)
+    def draw(self, frame, draw_params):
+        return self.model.draw(frame, draw_params)
 
     def is_safe(self):
         return self.model.is_safe()

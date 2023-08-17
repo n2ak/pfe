@@ -125,9 +125,11 @@ class Program:
     def run_server(self, host, port, debug=True):
         Server.run_server(host, port, self, debug=debug,)
 
-    def get_params(self, ret_types=True):
+    def get_params(self, ret_types=True, include_drawer=False):
         params = [system.get_param(ret_types=ret_types)
                   for system in self.systems]
+        if include_drawer:
+            params.append(self.drawer.get_param(ret_types=ret_types))
         if ret_types:
             params = dict(params)
             # params = "lane", params

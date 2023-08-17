@@ -67,9 +67,9 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
     draw_params = DrawParams()
     systems = [
         ForwardCollisionWarningSystem(objects_params),
-        LaneDepartureWarningSystem(
-            yolo_lane_params
-        ),
+        # LaneDepartureWarningSystem(
+        #     yolo_lane_params
+        # ),
     ]
     drawer = Drawer(draw_params)
     from src.warning import Warner

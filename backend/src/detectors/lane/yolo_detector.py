@@ -1,9 +1,13 @@
+from __future__ import annotations
 from src.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
 from src.utils_ import draw_lane_zone, polynome
 from src.detectors.lane import LaneDetectorBase
 from src.yolo import Yolo
+from typing import List, TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.drawer import DrawParams
 
 GREEN = np.array([0, 255, 0])/255
 RED = np.array([255, 0, 0])/255
@@ -25,11 +29,11 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         self.params = params
 
-    def draw(self, frame):
+    def draw(self, frame, draw_params: DrawParams):
         h, w = frame.shape[:2]
-
         if not self._ready:
             return frame
+
         left, right, ys, in_lane = self.left, self.right, self.ys, self.in_lane
         left = scale(left, w)
         right = scale(right, w)
@@ -37,24 +41,31 @@ class YoloLaneDetecor(LaneDetectorBase):
         left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
         car_center, threshold = self.params.CAR_CENTER, self.params.LANE_THRESHOLD
+        out = frame
+        step = 3
+        if draw_params.RENDER_LANE:
+            out = draw_lane_zone_transp(
+                out, left, right, ys, opacity=.30, step=step)
+        if draw_params.RENDER_LINES:
+            out = draw_lines(out, left, right, ys, step=step,
+                             line_color=(0, 0, 255))
 
-        out = draw_lane_zone_transp(frame, left, right, ys, opacity=.30)
+        if draw_params.RENDER_CENTER:
+            lane_center = (left_lane + right_lane) // 2
 
-        lane_center = (left_lane + right_lane) // 2
+            ccr = car_center+threshold
+            ccl = car_center-threshold
+            ht = h - 40
+            hm = h - 50
+            hb = h - 60
 
-        ccr = car_center+threshold
-        ccl = car_center-threshold
-        ht = h - 40
-        hm = h - 50
-        hb = h - 60
+            cv2.line(out, (ccr, hm), (ccl, hm), 0, 5)
+            cv2.line(out, (ccr, hb), (ccr, ht), 0, 5)
+            cv2.line(out, (ccl, hb), (ccl, ht), 0, 5)
+            cv2.circle(out, (car_center, hm), 7, 0, -1)
 
-        cv2.line(out, (ccr, hm), (ccl, hm), 0, 5)
-        cv2.line(out, (ccr, hb), (ccr, ht), 0, 5)
-        cv2.line(out, (ccl, hb), (ccl, ht), 0, 5)
-        cv2.circle(out, (car_center, hm), 7, 0, -1)
-
-        c = GREEN if in_lane else RED
-        cv2.circle(out, (lane_center, height), 10, c, -1)
+            c = GREEN if in_lane else RED
+            cv2.circle(out, (lane_center, height), 10, c, -1)
         return out
 
     def pipeline(self, frame):
@@ -133,21 +144,24 @@ def scale(var, to):
     return int(var*to)
 
 
-def draw_lane_zone_transp(image, left, right, ys, opacity=.75, lane_color=(0, 1, 0), line_color=(0, 0, 255), draw_lines=False, step=5):
+def draw_lane_zone_transp(image, left, right, ys, opacity=.75, lane_color=(0, 1, 0), step=5):
     mask = draw_lane_zone(np.zeros_like(image), (right, left),
                           ys, step=step).astype(np.float64)
     mask /= 255.0
     mask *= opacity
     green = np.ones(image.shape, dtype=np.float64)*lane_color
     green = green*mask + (image/255)*(1.0-mask)
-    if draw_lines:
-        prev = None
-        for r, l, y in list(zip(right, left, ys))[::step]:
-            if prev is not None:
-                cv2.line(green, (l, y), prev[1], line_color, 1)
-                cv2.line(green, (r, y), prev[0], line_color, 1)
-            prev = [r, y], [l, y]
     return green
+
+
+def draw_lines(image, left, right, ys, step=5, line_color=(0, 0, 255)):
+    prev = None
+    for r, l, y in list(zip(right, left, ys))[::step]:
+        if prev is not None:
+            cv2.line(image, (l, y), prev[1], line_color, 1)
+            cv2.line(image, (r, y), prev[0], line_color, 1)
+        prev = [r, y], [l, y]
+    return image
 
 
 def get_curvatures2(masks, indexes, step=3, range=[1, -2]):

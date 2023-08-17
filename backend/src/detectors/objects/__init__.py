@@ -1,8 +1,11 @@
+from __future__ import annotations
 from .params import ObjectDetectorParams
 from src.utils_ import get_object_distance, get_object_distance2, draw_text_with_backgraound
 from src.yolo import Yolo
 import cv2
-from typing import List
+from typing import List, TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.drawer import DrawParams
 
 
 class ObjectInfo():
@@ -39,7 +42,7 @@ class ObjectDetector:
         return (type in self.objects_to_detect)
 
     def is_object_in_front_close(self, distance):
-        print(2, "self.params.CAR_MIN_DISTANCE", self.params.CAR_MIN_DISTANCE)
+        # print(2, "self.params.CAR_MIN_DISTANCE", self.params.CAR_MIN_DISTANCE)
         return distance < self.params.CAR_MIN_DISTANCE * 1000
 
     def estimated_object_width(self, type):
@@ -107,17 +110,18 @@ class ObjectDetector:
 
         return objects
 
-    def draw(self, frame):
+    def draw(self, frame, draw_params: DrawParams):
         if not self._ready:
             return frame
         # print(1, "self.params.CAR_MIN_DISTANCE", self.params.CAR_MIN_DISTANCE)
-        for object in self.close_objects:
-            (x, y, w, h), name, distance = object.coords, object.type, object.distance
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            distance = int(distance)
-            distance_type = self.distance_type(distance)
-            draw_text_with_backgraound(
-                frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
+        if draw_params.RENDER_CAR_BOX:
+            for object in self.close_objects:
+                (x, y, w, h), name, distance = object.coords, object.type, object.distance
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                distance = int(distance)
+                distance_type = self.distance_type(distance)
+                draw_text_with_backgraound(
+                    frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
         return frame
 
     def distance_type(self, distance):

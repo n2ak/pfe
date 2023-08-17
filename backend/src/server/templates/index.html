@@ -35,11 +35,15 @@
                             <div class="card-body" style="text-align:center;">
                                 <form action="">
                                     {% for k,v in param.PARAMS.items() %}
+                                    {% set is_checkbox = (str(v).lower() in ['true','false']) %}
                                     <div class="form-group">
                                         <label for="{{k}}" class="mb-2"
                                             style="width: 100%;text-align: center;">{{k}}</label>
-                                        <input id="{{k}}" class="form-control mb-2" placeholder="{{k}}" type="text"
-                                            value="{{v}}" name="{{k}}">
+                                        <input id="{{k}}" class="form-control mb-2" placeholder="{{k}}"
+                                            type="{{ 'checkbox' if is_checkbox else 'text' }}" {{'checked="checked"' if (is_checkbox and str(v).lower() == "true") else ""
+                                            }} 
+                                            value="{{v}}" 
+                                            name="{{k}}">
                                     </div>
                                     {% endfor %}
                                     <input type="hidden" name="type" value="{{type}}">
@@ -73,20 +77,27 @@
                     type = e.getAttribute("value");
                     return;
                 }
+                function get_value(e) {
+                    if (e.getAttribute("type") === "checkbox") {
+                        const val = e.checked ? "True" : "False";
+                        return val
+                    }
+                    return e.value;
+                }
                 const key = e.getAttribute("name");
-                const value = e.value;
+                const value = get_value(e);
                 val[key] = value;
             })
             const body = JSON.stringify(val);
             const url = "/params/" + type;
-            // console.log({ url, body })
+            console.log({ url, val })
             $.post(url, data = body, (data) => {
                 console.log({ data });
             }).error(e => {
                 console.error(e);
             });
         }
-        $(window).on('load', function () {
+        $(window).on(' load', function () {
             Array.from(document.getElementsByTagName("form")).forEach(element => {
                 element.addEventListener("submit", submit);
             });

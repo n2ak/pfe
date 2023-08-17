@@ -16,7 +16,7 @@ class Drawer():
     def draw(self, frame, systems: List[ADASystem]):
         from src.utils_ import draw_text_with_backgraound
         for system in systems:
-            frame = system.draw(frame)
+            frame = system.draw(frame, self.params)
 
         safe = all([system.is_safe() for system in systems])
         # safe = car_detector.safe and lane_detector.safe
@@ -44,3 +44,9 @@ class Drawer():
             text = f"FPS: {int(fps)}"
             put_text(frame, text, (7, 90), thickness=2)
         return fps
+
+    def get_param(self, ret_types=True):
+        params = self.params
+        if ret_types:
+            params = "drawing", params
+        return params

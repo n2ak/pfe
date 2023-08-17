@@ -39,11 +39,11 @@ MAIN_PROGRAM: Program = None
 @app.context_processor
 def vars():
     global MAIN_PROGRAM
-    params = MAIN_PROGRAM.get_params()
+    params = MAIN_PROGRAM.get_params(include_drawer=True)
     params = params.items()
     names = [f'collapse{i}' for i in range(len(params))]
     print(params)
-    return dict(params=zip(names, params))
+    return dict(params=zip(names, params), str=str)
 
 
 @app.route("/")
@@ -110,7 +110,7 @@ def generate_frame_response():
 
 def update(type, data):
     global MAIN_PROGRAM
-    params = MAIN_PROGRAM.get_params()
+    params = MAIN_PROGRAM.get_params(include_drawer=True)
     assert type in params.keys()
     param = params[type]
     print(param)
