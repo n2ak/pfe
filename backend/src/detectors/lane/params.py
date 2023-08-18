@@ -10,7 +10,7 @@ _default_params: dict = {
     "use_poly_fit": True,
     "car_center": 120,
     "lane_threshold": 100,
-    "weights": r"F:\Master\S4\main\backend\models\train4\best.pt",
+    "weights": r".\models\train4\best.pt",
 }
 _default_types: dict = {
     "use_poly_fit": [str2bool],

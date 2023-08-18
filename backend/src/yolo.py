@@ -13,7 +13,7 @@ class Yolo:
 
     def predict(self, frame, verbose=False, **kwargs):
         if isinstance(frame, str):
-            from src.utils_ import read_rgb
+            from src.utils import read_rgb
             frame = read_rgb(frame)
         result = self.model.predict(frame, verbose=verbose)
         return result[0]

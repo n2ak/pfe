@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .params import ObjectDetectorParams
-from src.utils_ import get_object_distance, get_object_distance2, draw_text_with_backgraound
+from src.utils import get_object_distance, get_object_distance2, draw_text_with_backgraound
 from src.yolo import Yolo
 import cv2
 from typing import List, TYPE_CHECKING

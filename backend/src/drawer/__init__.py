@@ -14,7 +14,7 @@ class Drawer():
         self.prev_time = time.time()-1
 
     def draw(self, frame, systems: List[ADASystem]):
-        from src.utils_ import draw_text_with_backgraound
+        from src.utils import draw_text_with_backgraound
         for system in systems:
             frame = system.draw(frame, self.params)
 
@@ -32,7 +32,7 @@ class Drawer():
         return frame
 
     def update_fps(self, frame=None):
-        from src.utils_ import put_text
+        from src.utils import put_text
 
         new = time.time()
         self.fps_.append(1//(new-self.prev_time))

@@ -9,3 +9,7 @@ data
 **/*.pt
 **/*.pickle
 **/train*
+**/*.ipynb
+backend/assets
+/backend/src/edge_detection.ipynb
+**/*_test.py

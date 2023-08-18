@@ -2,7 +2,7 @@ from __future__ import annotations
 from src.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
-from src.utils_ import draw_lane_zone, polynome
+from src.utils import draw_lane_zone, polynome
 from src.detectors.lane import LaneDetectorBase
 from src.yolo import Yolo
 from typing import List, TYPE_CHECKING
@@ -18,7 +18,6 @@ class YoloLaneDetecor(LaneDetectorBase):
     def __init__(
         self,
         params=YoloLaneDetecorParams(),
-        # weights=r"F:\Master\S4\main\backend\models\train4\best.pt"
     ) -> None:
         super().__init__()
         self.model = Yolo(params.WEIGHTS, hub=False)
