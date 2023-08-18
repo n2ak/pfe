@@ -527,6 +527,7 @@ def scale(frame, ratio=1, size=None):
 def show_window(name, image, ratio=1):
     image = scale(image, ratio)
     cv2.imshow(name, image)
+    return cv2.waitKey(1) & 0xFF == ord('q')
 
 
 # def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):

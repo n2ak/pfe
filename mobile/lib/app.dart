@@ -1,3 +1,4 @@
+import 'package:car_security/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:car_security/player_tab.dart';
@@ -16,6 +17,7 @@ class _AppState extends State<App> {
   final String playerUrl = "https://media.w3.org/2010/05/sintel/trailer.mp4";
   final String carParamsUrl = "http://192.168.1.20:9999/params/car";
   final String drawParamsUrl = "http://192.168.1.20:9999/params/draw";
+  final String imageFeedUrl = "http://192.168.1.20:9999/image_feed";
 
   @override
   void initState() {
@@ -71,39 +73,45 @@ class _AppState extends State<App> {
     //     carParamsUrl,
     //   ),
     // );
+
     return OrientationBuilder(
       builder: (context, orientation) {
         var fullScreen = orientation == Orientation.landscape;
         // var func = fullScreen ? _forcePortrait : _forceLandscape;
-        correctBars(fullScreen);
-        var player = PlayerTab(playerUrl, toggleFullScreen);
-        return DefaultTabController(
-          length: _tabCount,
-          child: Scaffold(
-            appBar: fullScreen
-                ? null
-                : AppBar(
-                    centerTitle: true,
-                    title: const Text('Car Security'),
-                    bottom: const TabBar(
-                      tabs: [
-                        Tab(text: 'Video stream'),
-                        Tab(text: 'Params'),
-                      ],
-                    ),
-                  ),
-            body: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                player,
-                ParamsControllerTab(
-                  drawParamsUrl,
-                  carParamsUrl,
-                ),
-              ],
-            ),
-          ),
-        );
+        // correctBars(fullScreen);
+        // var player = PlayerTab(playerUrl, toggleFullScreen);
+
+        // var g = DefaultTabController(
+        //   length: _tabCount,
+        //   child: Scaffold(
+        //     appBar: fullScreen
+        //         ? null
+        //         : AppBar(
+        //             centerTitle: true,
+        //             title: const Text('Car Security'),
+        //             bottom: const TabBar(
+        //               tabs: [
+        //                 Tab(text: 'Video stream'),
+        //                 Tab(text: 'Params'),
+        //               ],
+        //             ),
+        //           ),
+        //     body: TabBarView(
+        //       physics: const NeverScrollableScrollPhysics(),
+        //       children: [
+        //         player,
+        //         ParamsControllerTab(
+        //           drawParamsUrl,
+        //           carParamsUrl,
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // );
+
+        return Scaffold(
+            appBar: AppBar(title: const Text("Yoo")),
+            body: CameraFeed(imageFeedUrl));
       },
     );
   }

@@ -3,7 +3,7 @@ import 'package:car_security/app.dart';
 
 void main() {
   runApp(
-    MaterialApp(
+    const MaterialApp(
       home: App(),
     ),
   );

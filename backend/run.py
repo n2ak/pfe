@@ -1,6 +1,7 @@
 import cv2
 import time
 # from param import *
+from src.utils_ import seek_video
 from src.main import Program
 from src.adas import LaneDepartureWarningSystem, ForwardCollisionWarningSystem
 from src.drawer import Drawer
@@ -28,31 +29,18 @@ from src.drawer import DrawParams
 #         use_canny=use_canny,
 #         canny_thresholds=canny_thresholds
 #     )
+F = 2800
+FOCAL_LENGTH = 4.74
+config = {
+    "polygon_height": 150,
+    "lane_center1": 600,
+    "lane_width1": 125*2,
+    "lane_center2": 700,
+    "lane_width2": 350*2,
+}
 
 
-def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
-    F = 2800
-    FOCAL_LENGTH = 4.74
-    config = {
-        "polygon_height": 150,
-        "lane_center1": 600,
-        "lane_width1": 125*2,
-        "lane_center2": 700,
-        "lane_width2": 350*2,
-    }
-    src = r"F:\Master\S4\yolo_test\vids\projet11.mp4"
-    src = r"F:\Master\S4\main\rsrc\tanj.mp4"
-    video = cv2.VideoCapture(src)
-    from src.utils_ import seek_video
-    seek_video(video, 2 * 60)
-
-    on, initial_frame = video.read()
-    assert on, f"No video Found '{src}'"
-    h, w = initial_frame.shape[:2]
-    # ld = init_ml_lane_detector(initial_frame.shape[:2])
-    # ld.init_polygon(config)
-    from src.server import Server
-    server = Server()
+def init_params(initial_frame):
     objects_params = ObjectDetectorParams()
     objects_params.update_from_json({
         "f": F,
@@ -63,8 +51,22 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
     yolo_lane_params.update_from_json({
         "use_poly_fit": True,
     })
-
     draw_params = DrawParams()
+    return objects_params, yolo_lane_params, draw_params
+
+
+def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
+    src = r"F:\Master\S4\yolo_test\vids\projet11.mp4"
+    src = r"F:\Master\S4\main\rsrc\tanj.mp4"
+    video = cv2.VideoCapture(src)
+    seek_video(video, 2 * 60)
+
+    on, initial_frame = video.read()
+    assert on, f"No video Found '{src}'"
+    h, w = initial_frame.shape[:2]
+    from src.server import Server
+    server = Server()
+    objects_params, yolo_lane_params, draw_params = init_params(initial_frame)
     systems = [
         ForwardCollisionWarningSystem(objects_params),
         # LaneDepartureWarningSystem(
@@ -79,11 +81,6 @@ def main(host: str, port: str, use_async: bool = False, warn=False, log=False):
         drawer,
         server,
         warner,
-        use_async=use_async,
-        frame_ratio=2,
-        draw=True,
-        draw_lines=False,
-        show_windows=False,
     )
     frame_count = 30
 
