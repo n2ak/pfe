@@ -11,9 +11,12 @@ class ParamsBase:
             value = data[k]
             value = self.parse(k, value)
             self.PARAMS[k] = value
-        # import json
-        # print("Update params:")
-        # print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
+        self.print()
+
+    def print(self):
+        print(self.__class__.__name__)
+        import json
+        print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
 
     def set(self, key, value):
         value = self.parse(key, value)

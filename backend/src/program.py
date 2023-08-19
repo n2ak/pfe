@@ -15,20 +15,17 @@ class Program:
         self,
         systems,
         drawer,
-        server: Server,
         warner,
         show_window=False,
+        systems_on=False,
     ) -> None:
-        self.systems = systems
-        self.drawer = drawer
-        self.window_names = ["Main"]
-        self.server = server
         self.show_window = show_window
 
         self.processor = Processor(
             systems,
             warner,
             drawer,
+            systems_on=systems_on
         )
 
     def stop(self):

@@ -4,12 +4,14 @@ import numpy as np
 from .params import DrawParams
 from src.adas import ADASystem
 from typing import List
+from src.base.parameterizable import Parameterizable
 
 
-class Drawer():
+class Drawer(Parameterizable):
     fps_ = [0]
 
     def __init__(self, params: DrawParams) -> None:
+        super().__init__("drawer")
         self.params = params
         self.prev_time = time.time()-1
 
@@ -44,9 +46,3 @@ class Drawer():
             text = f"FPS: {int(fps)}"
             put_text(frame, text, (7, 90), thickness=2)
         return fps
-
-    def get_param(self, ret_types=True):
-        params = self.params
-        if ret_types:
-            params = "drawing", params
-        return params

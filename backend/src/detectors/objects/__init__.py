@@ -39,7 +39,8 @@ class ObjectDetector:
         self._ready = False
 
     def init(self, initial_frame):
-        h, w = initial_frame.shape[-1]
+        print(type(initial_frame))
+        h, w = initial_frame.shape[:2]
         self.params.FRAME_CENTER_Y = w//2
 
     def detectable(self, type):

@@ -5,7 +5,7 @@ from src.detectors.objects import ObjectDetector
 
 class ForwardCollisionWarningSystem(ADASystem):
     def __init__(self, objects_params) -> None:
-        super().__init__()
+        super().__init__("objects")
         self.model = ObjectDetector(
             params=objects_params
         )
@@ -13,23 +13,17 @@ class ForwardCollisionWarningSystem(ADASystem):
     def init(self, initial_frame):
         self.model.init(initial_frame)
 
-    def tick(self, frame):
+    def _tick(self, frame):
         return self.model.detect(frame)
 
-    def draw(self, frame, draw_params):
+    def _draw(self, frame, draw_params):
         return self.model.draw(frame, draw_params)
 
-    def is_safe(self):
+    def _is_safe(self):
         return self.model.is_safe()
 
     def update_state(self, data):
         return self.model._update(data)
-
-    def get_param(self, ret_types=True):
-        params = self.model.params
-        if ret_types:
-            params = "objects", params
-        return params
 
     def report(self):
         near_objects = self.model.close_objects

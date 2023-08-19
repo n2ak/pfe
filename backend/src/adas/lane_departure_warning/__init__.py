@@ -4,7 +4,7 @@ from src.detectors.lane import YoloLaneDetecor
 
 class LaneDepartureWarningSystem(ADASystem):
     def __init__(self, params) -> None:
-        super().__init__()
+        super().__init__("lane")
         self.model = YoloLaneDetecor(
             params=params,
         )
@@ -12,23 +12,17 @@ class LaneDepartureWarningSystem(ADASystem):
     def init(self, initial_frame):
         self.model.init(initial_frame)
 
-    def tick(self, frame):
+    def _tick(self, frame):
         return self.model.pipeline(frame)
 
-    def draw(self, frame, draw_params):
+    def _draw(self, frame, draw_params):
         return self.model.draw(frame, draw_params)
 
-    def is_safe(self):
+    def _is_safe(self):
         return self.model.is_safe()
 
     def update_state(self, data):
         return self.model._update(data)
-
-    def get_param(self, ret_types=True):
-        params = self.model.params
-        if ret_types:
-            params = "lane", params
-        return params
 
     def report(self):
         return ""

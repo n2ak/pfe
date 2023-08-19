@@ -95,8 +95,8 @@ def generate_frame_response():
 def update(type, data):
     global MAIN_PROGRAM
     params = MAIN_PROGRAM.get_params(include_drawer=True)
-    assert type in params.keys()
-    param = params[type]
+    assert type in params.keys(), f"'{type}' not in {params.keys()}"
+    _, param = params[type]
     print(param)
     param.update_from_json(data)
     print(f"Params for {type} are updated.")

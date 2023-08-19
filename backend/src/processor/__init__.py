@@ -1,20 +1,27 @@
-import typing
+from typing import List, Union
 from src.adas import ADASystem
 from src.warning import Warner
 from src.drawer import Drawer
 from src.workers import DetectionWorker
+from .processor_params import ProcessorParams
+from src.base.parameterizable import Parameterizable
+from src.base.params import ParamsBase
 
 
-class Processor:
+class Processor(Parameterizable):
     def __init__(
         self,
-        systems: typing.List[ADASystem],
+        systems: List[ADASystem],
         warner: Warner,
         drawer: Drawer,
+        systems_on=False
     ) -> None:
+        super().__init__("processor")
         self.systems = systems
         self.warner = warner
         self.drawer = drawer
+        self.params = ProcessorParams(systems, False)
+        self.params.print()
 
     def init(self, initial_frame):
         for system in self.systems:
@@ -36,9 +43,11 @@ class Processor:
 
     def tick(self, frame):
         if self._worker_free is True:
-            params = [system.get_param(ret_types=False).PARAMS
+            params = [system.get_param(ret_type=False).PARAMS
                       for system in self.systems]
-            self.detectionWorker.q_in.put((frame, params))
+            ons = [self.params.get_porperty(system.name)
+                   for system in self.systems]
+            self.detectionWorker.q_in.put((frame, params, ons))
             self._worker_free = False
         if not self.detectionWorker.q_out.empty():
             datas = self.detectionWorker.q_out.get()
@@ -61,14 +70,17 @@ class Processor:
         )
         return frame
 
-    def get_params(self, ret_types=True, include_drawer=False):
+    def get_params(self, ret_types=True, include_drawer=False) -> Union[list[ParamsBase], dict[str, list[ParamsBase]]]:
         systems = self.systems
         drawer = self.drawer
 
-        params = [system.get_param(ret_types=ret_types)
-                  for system in systems]
+        entities: List[Parameterizable] = [self, *systems]
+
         if include_drawer:
-            params.append(drawer.get_param(ret_types=ret_types))
+            entities.append(drawer)
+        params = [e.get_param(ret_type=ret_types) for e in entities]
         if ret_types:
             params = dict(params)
         return params
+
+    # def _update(self):
