@@ -26,9 +26,20 @@ class DrawParams(ParamsBase):
 
     @property
     def RENDER_LINES(self): return self.get_porperty("renderLines")
+    @RENDER_LINES.setter
+    def RENDER_LINES(self, value): self.set("renderLines", value)
+
     @property
     def RENDER_LANE(self): return self.get_porperty("renderLane")
+    @RENDER_LANE.setter
+    def RENDER_LANE(self, value): self.set("renderLane", value)
+
     @property
     def RENDER_CAR_BOX(self): return self.get_porperty("renderCarBox")
+    @RENDER_CAR_BOX.setter
+    def RENDER_CAR_BOX(self, value): self.set("renderCarBox", value)
+
     @property
     def RENDER_CENTER(self): return self.get_porperty("renderCenter")
+    @RENDER_CENTER.setter
+    def RENDER_CENTER(self, value): self.set("renderCenter", value)

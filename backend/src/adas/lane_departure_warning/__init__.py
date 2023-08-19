@@ -9,6 +9,9 @@ class LaneDepartureWarningSystem(ADASystem):
             params=params,
         )
 
+    def init(self, initial_frame):
+        self.model.init(initial_frame)
+
     def tick(self, frame):
         return self.model.pipeline(frame)
 

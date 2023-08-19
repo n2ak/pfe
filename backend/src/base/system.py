@@ -8,25 +8,29 @@ class ADASystem(abc.ABC):
         self.model = None
 
     @abc.abstractmethod
+    def init(self, initial_frame):
+        raise NotImplementedError("")
+
+    @abc.abstractmethod
     def tick(self, frame):
-        raise "Unimplemented"
+        raise NotImplementedError("")
 
     @abc.abstractmethod
     def draw(self, frame):
-        raise "Unimplemented"
+        raise NotImplementedError("")
 
     @abc.abstractmethod
     def is_safe(self):
-        raise "Unimplemented"
+        raise NotImplementedError("")
 
     @abc.abstractmethod
     def update_state(self, data):
-        raise "Unimplemented"
+        raise NotImplementedError("")
 
     @abc.abstractmethod
     def report(self):
-        raise "Unimplemented"
+        raise NotImplementedError("")
 
     @abc.abstractmethod
     def get_param(self, ret_types=True) -> typing.Union[typing.Tuple[str, ParamsBase], ParamsBase]:
-        raise "Unimplemented"
+        raise NotImplementedError("")

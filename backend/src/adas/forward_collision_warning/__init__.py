@@ -10,6 +10,9 @@ class ForwardCollisionWarningSystem(ADASystem):
             params=objects_params
         )
 
+    def init(self, initial_frame):
+        self.model.init(initial_frame)
+
     def tick(self, frame):
         return self.model.detect(frame)
 

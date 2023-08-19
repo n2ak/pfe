@@ -1,6 +1,6 @@
 # TODO : draw nothing when no lanes are detected for to many frames
 import time
-from src.utils import read_video
+from src.utils import read_video, bytes_to_image
 from src.server import Server
 from src.processor import Processor
 
@@ -38,8 +38,15 @@ class Program:
         from src.utils import show_window
         return show_window(name, frame, ratio=1)
 
-    def run(self, video, frame_count):
+    def _run(self,  frame_count, video=None):
         self.processor.start()
+
+        def get_frame():
+            if video is not None:
+                on, frame = read_video(video)
+            else:
+                on, frame = True, self._frame
+            return on, frame
         try:
             i = 0
             while True:
@@ -49,7 +56,7 @@ class Program:
                     import sys
                     sys.exit()
                     break
-                self.on, frame = read_video(video, )  # size=(640, 384))
+                self.on, frame = get_frame()  # size=(640, 384))
                 if not self.on:
                     break
                 self.processor.set_frame(frame)
@@ -64,6 +71,21 @@ class Program:
             pass
         self.stop()
 
+    def init(self, frame):
+        self.processor.init(frame)
+
+    def run(self,  frame_count, video=None):
+        if video is not None:
+            on, frame = read_video(video)
+            assert on is True
+        else:
+            while self._frame is None:
+                print("Waiting for first frame..")
+                time.sleep(.2)
+            frame = self._frame
+        self.init(frame)
+        self._run(frame_count, video=video)
+
     def run_thread(self, func, args):
         import threading
         t = threading.Thread(target=func, args=args)
@@ -75,3 +97,6 @@ class Program:
 
     def get_params(self, ret_types=True, include_drawer=False):
         return self.processor.get_params(ret_types=ret_types, include_drawer=include_drawer)
+
+    def set_frame_from_bytes(self, bytes):
+        self._frame = bytes_to_image(bytes)

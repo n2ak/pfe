@@ -1,4 +1,5 @@
 from __future__ import annotations
+from flask_sock import Sock
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.main import Program
@@ -34,23 +35,6 @@ _dummy_page = """
 </html>
 """
 MAIN_PROGRAM: Program = None
-
-
-@app.context_processor
-def vars():
-    global MAIN_PROGRAM
-    params = MAIN_PROGRAM.get_params(include_drawer=True)
-    params = params.items()
-    names = [f'collapse{i}' for i in range(len(params))]
-    print(params)
-    return dict(params=zip(names, params), str=str)
-
-
-@app.route("/")
-def index():
-    # return the rendered template
-    return render_template(r"index.html")
-    return render_template_string(_dummy_page)
 
 
 async def transmit(websocket, path):
@@ -162,6 +146,42 @@ def video_feed():
         generate_frame_response(),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+@app.context_processor
+def vars():
+    global MAIN_PROGRAM
+    params = MAIN_PROGRAM.get_params(include_drawer=True)
+    params = params.items()
+    names = [f'collapse{i}' for i in range(len(params))]
+    print(params)
+    return dict(params=zip(names, params), str=str)
+
+
+@app.route("/")
+def index():
+    # return the rendered template
+    return render_template(r"index.html")
+    return render_template_string(_dummy_page)
+
+
+sockets = Sock(app)
+
+
+@sockets.route('/ws')
+def ws_endpoint(ws):
+    global last, MAIN_PROGRAM
+    try:
+        while True:
+            current = time.time()
+            data = ws.receive()
+            # data = process_bytes(data)
+            MAIN_PROGRAM.set_frame_from_bytes(data)
+            print(1/(current - last), " fps")
+            last = current
+    except:
+        cv2.destroyAllWindows()
+        pass
 
 
 def set_frame(frame):

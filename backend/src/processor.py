@@ -16,6 +16,10 @@ class Processor:
         self.warner = warner
         self.drawer = drawer
 
+    def init(self, initial_frame):
+        for system in self.systems:
+            system.init(initial_frame)
+
     def start(self):
         self.detectionWorker = DetectionWorker(
             self.systems

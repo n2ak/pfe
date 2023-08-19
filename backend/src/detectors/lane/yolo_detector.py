@@ -28,6 +28,10 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         self.params = params
 
+    def init(self, initial_frame):
+        h, w = initial_frame.shape[-1]
+        self.params.CAR_CENTER = w//2
+
     def draw(self, frame, draw_params: DrawParams):
         h, w = frame.shape[:2]
         if not self._ready:

@@ -17,9 +17,9 @@ class ObjectInfo():
 
 class ObjectDetector:
     OBJECTS_WIDTH: dict[str, float] = {
-        "car": 2.5,
-        "truck": 3,
-        "bus": 3,
+        "car": 1.8,
+        "truck": 2.5,
+        "bus": 2.5,
     }
 
     def __init__(self, params: ObjectDetectorParams, ratio=1, objects: List[str] = []) -> None:
@@ -37,6 +37,10 @@ class ObjectDetector:
         self.params = params
         print("Object", id(self.params))
         self._ready = False
+
+    def init(self, initial_frame):
+        h, w = initial_frame.shape[-1]
+        self.params.FRAME_CENTER_Y = w//2
 
     def detectable(self, type):
         return (type in self.objects_to_detect)
@@ -59,16 +63,14 @@ class ObjectDetector:
         # # TODO :add check
         # if in_front and (y+h) > (720-150):
         #     print("y+h", y+h)
-        import matplotlib.pyplot as plt
-        plt.plot()
         return in_front
 
     def calculate_distance(self, object: ObjectInfo):
         (x, y, w, h), type = object.coords, object.type
         f = self.params.F
-        real_width = self.estimated_object_width(type)*1000
+        real_width = self.estimated_object_width(type) * 1000
         return get_object_distance2(f, w, real_width)
-        return get_object_distance(f, self.focal_length, w, real_width, self.params.ratio)
+        # return get_object_distance(f, 4.74, w, real_width, 1)
 
     def calculate_distances(self, objects):
         distances = []

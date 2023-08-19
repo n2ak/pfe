@@ -15,6 +15,10 @@ class ParamsBase:
         # print("Update params:")
         # print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
 
+    def set(self, key, value):
+        value = self.parse(key, value)
+        self.PARAMS[key] = value
+
     def parse(self, key, value):
         for convert in self.types[key]:
             value = convert(value)

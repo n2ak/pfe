@@ -196,6 +196,15 @@ def load_camera_info(path="../cameraInfo.pkl") -> CameraInfo:
         return pickle.load(f)
 
 
+def bytes_to_image(data, dtype=np.uint8, shape=(480, 720, -1), toBGR=True):
+    data = np.frombuffer(data, dtype=dtype).reshape(shape)
+    if toBGR:
+        cvt = cv2.COLOR_RGBA2BGR if (
+            data.shape[-1] == 4) else cv2.COLOR_RGB2BGR
+        data = cv2.cvtColor(data, cvt)
+    return data
+
+
 def mask_road(image, polygon):
     mask = np.zeros_like(image)
     mask = cv2.fillPoly(mask, polygon, (255, 255, 255))
