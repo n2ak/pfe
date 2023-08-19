@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:car_security/controls_overlay.dart';
-import 'package:flutter/services.dart';
 
 typedef OnStopRecordingCallback = void Function(String);
 
 class VlcPlayerWithControls extends StatefulWidget {
-  Function toggleFullScreen;
+  final Function toggleFullScreen;
   final VlcPlayerController controller;
   final bool showControls;
 
-  VlcPlayerWithControls(
+  const VlcPlayerWithControls(
     this.controller,
     this.toggleFullScreen, {
     this.showControls = true,
@@ -83,27 +82,27 @@ class VlcPlayerWithControlsState extends State<VlcPlayerWithControls>
     if (_controller.value.isInitialized) {
       final oPosition = _controller.value.position;
       final oDuration = _controller.value.duration;
-      if (oPosition != null && oDuration != null) {
-        if (oDuration.inHours == 0) {
-          final strPosition = oPosition.toString().split('.').first;
-          final strDuration = oDuration.toString().split('.').first;
-          setState(() {
-            position =
-                "${strPosition.split(':')[1]}:${strPosition.split(':')[2]}";
-            duration =
-                "${strDuration.split(':')[1]}:${strDuration.split(':')[2]}";
-          });
-        } else {
-          setState(() {
-            position = oPosition.toString().split('.').first;
-            duration = oDuration.toString().split('.').first;
-          });
-        }
+      // if (oPosition != null && oDuration != null) {
+      if (oDuration.inHours == 0) {
+        final strPosition = oPosition.toString().split('.').first;
+        final strDuration = oDuration.toString().split('.').first;
         setState(() {
-          validPosition = oDuration.compareTo(oPosition) >= 0;
-          sliderValue = validPosition ? oPosition.inSeconds.toDouble() : 0;
+          position =
+              "${strPosition.split(':')[1]}:${strPosition.split(':')[2]}";
+          duration =
+              "${strDuration.split(':')[1]}:${strDuration.split(':')[2]}";
+        });
+      } else {
+        setState(() {
+          position = oPosition.toString().split('.').first;
+          duration = oDuration.toString().split('.').first;
         });
       }
+      setState(() {
+        validPosition = oDuration.compareTo(oPosition) >= 0;
+        sliderValue = validPosition ? oPosition.inSeconds.toDouble() : 0;
+      });
+      // }
       setState(() {
         numberOfCaptions = _controller.value.spuTracksCount;
         numberOfAudioTracks = _controller.value.audioTracksCount;
@@ -153,9 +152,9 @@ class VlcPlayerWithControlsState extends State<VlcPlayerWithControls>
                   child: AnimatedOpacity(
                     opacity: recordingTextOpacity,
                     duration: const Duration(seconds: 1),
-                    child: Wrap(
+                    child: const Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
-                      children: const [
+                      children: [
                         Icon(Icons.circle, color: Colors.red),
                         SizedBox(width: 5),
                         Text(
@@ -203,8 +202,7 @@ class VlcPlayerWithControlsState extends State<VlcPlayerWithControls>
                           inactiveColor: Colors.white70,
                           value: sliderValue,
                           min: 0.0,
-                          max: (!validPosition &&
-                                  _controller.value.duration == null)
+                          max: (!validPosition)
                               ? 1.0
                               : _controller.value.duration.inSeconds.toDouble(),
                           onChanged:

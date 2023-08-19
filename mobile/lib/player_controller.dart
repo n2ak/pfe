@@ -3,7 +3,7 @@ import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
 class VideoPlayerController extends StatefulWidget {
-  String url;
+  final String url;
   late VlcPlayerController controller;
   VideoPlayerController(this.url, {super.key});
 

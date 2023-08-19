@@ -1,8 +1,6 @@
 import 'package:car_security/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:car_security/player_tab.dart';
-import 'package:car_security/params_controller_tab.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -12,8 +10,6 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  static const _tabCount = 2;
-
   final String playerUrl = "https://media.w3.org/2010/05/sintel/trailer.mp4";
   final String carParamsUrl = "http://192.168.1.20:9999/params/car";
   final String drawParamsUrl = "http://192.168.1.20:9999/params/draw";
@@ -80,9 +76,12 @@ class _AppState extends State<App> {
         // var func = fullScreen ? _forcePortrait : _forceLandscape;
         // correctBars(fullScreen);
         // var player = PlayerTab(playerUrl, toggleFullScreen);
-
+        // var tabs = [
+        //   Tab(text: 'Video stream'),
+        //   Tab(text: 'Params'),
+        // ];
         // var g = DefaultTabController(
-        //   length: _tabCount,
+        //    length: tabs.length,
         //   child: Scaffold(
         //     appBar: fullScreen
         //         ? null
@@ -90,10 +89,7 @@ class _AppState extends State<App> {
         //             centerTitle: true,
         //             title: const Text('Car Security'),
         //             bottom: const TabBar(
-        //               tabs: [
-        //                 Tab(text: 'Video stream'),
-        //                 Tab(text: 'Params'),
-        //               ],
+        //               tabs: tabs,
         //             ),
         //           ),
         //     body: TabBarView(

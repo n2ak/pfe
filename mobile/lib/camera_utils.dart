@@ -1,12 +1,139 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
+import 'dart:async';
+
+import 'package:http/http.dart' as http;
+
+import 'package:web_socket_channel/io.dart';
 
 class ImageUtils {
-  ///
-  /// Converts a [CameraImage] in YUV420 format to [image_lib.Image] in RGB format
-  ///
+  String url;
+  IOWebSocketChannel? channel;
+  bool useSockets;
+  ImageUtils(this.url, this.useSockets) {
+    if (useSockets) {
+      resetSocket();
+    }
+    timer(fps);
+  }
+
+  bool canUpload = true;
+  bool canProcess = true;
+  //List<int>? image;
+  Uint8List? image;
+
+  String imageToString(CameraImage image) {
+    return json.encode(
+      image,
+      toEncodable: (object) {
+        CameraImage object_ = object;
+        List<MapEntry> list = List.empty();
+        for (var i = 0; i < object_.planes.length; i++) {
+          var plane = object_.planes[i];
+          list.add(MapEntry("plane$i", plane.bytes));
+        }
+        return Map.fromEntries(list);
+      },
+    );
+  }
+
+  Uint8List withouDecode(CameraImage image) {
+    return convertCameraImage(image).getBytes(format: imglib.Format.rgb);
+  }
+
+  void timer(int fps) {
+    Timer.periodic(Duration(milliseconds: ((1000 / fps).round())), (timer) {
+      send();
+    });
+  }
+
+  void send() {
+    if (image == null) return;
+    print("Uploading length: ${image!.length}");
+    if (useSockets) {
+      _sendFramesViaWebSocket(image);
+    } else {
+      _asyncSend(url, image!);
+      // postRequest(image!);
+    }
+  }
+
+  int last = DateTime.now().millisecondsSinceEpoch;
+  int fps = 5;
+  int fpss = (1000 / 5).round();
+  void onNewImage(CameraImage image) {
+    if (canProcess || this.image == null) {
+      int current = DateTime.now().millisecondsSinceEpoch;
+      if ((current - last) < fpss) return;
+      canProcess = false;
+      print("Processing");
+      var list = withouDecode(image);
+      this.image = list;
+      canProcess = true;
+      print("Processed");
+      last = current;
+    }
+    // if (this.image != null && canUpload) {
+    //   canUpload = false;
+    //   send();
+    // }
+  }
+
+  dispose() {
+    channel?.sink.close();
+  }
+
+  void resetSocket() {
+    channel = IOWebSocketChannel.connect('ws://192.168.1.20:9999/ws');
+  }
+
+  Future<void> _sendFramesViaWebSocket(dynamic frame) async {
+    if (channel!.closeCode != null) {
+      resetSocket();
+      return;
+    }
+    channel!.sink.add(frame);
+    print("Uploaded");
+    canUpload = true;
+  }
+
+  postRequest(Uint8List data) {
+    // var body = json.encode(data);
+    print("url: $url");
+    try {
+      var resp = http.post(Uri.parse(url),
+          headers: {"Content-Type": "application/octet-stream"}, body: data);
+      resp.then((response) {
+        String respText = "Params set successfully.";
+        if (response.statusCode != 200) {
+          String msg = response.body;
+          respText = "Setting params was unsuccessful,Error: $msg";
+        }
+        print(respText);
+        canUpload = true;
+      });
+    } catch (e) {
+      print("***************Error**************");
+      print("Error: $e");
+    }
+  }
+
+  _asyncSend(String url, List<int> list) async {
+    // canSend = false;
+    try {
+      await _asyncFileUpload(url, list);
+      canUpload = true;
+      print("Uploaded to $url");
+    } catch (e) {
+      print(e);
+    }
+    // canSend = true;
+  }
+
   static imglib.Image convertCameraImage(CameraImage cameraImage) {
     if (cameraImage.format.group == ImageFormatGroup.yuv420) {
       return convertYUV420ToImage(cameraImage);
@@ -17,9 +144,6 @@ class ImageUtils {
     }
   }
 
-  ///
-  /// Converts a [CameraImage] in BGRA888 format to [image_lib.Image] in RGB format
-  ///
   static imglib.Image convertBGRA8888ToImage(CameraImage cameraImage) {
     return imglib.Image.fromBytes(
       cameraImage.planes[0].width!,
@@ -29,9 +153,6 @@ class ImageUtils {
     );
   }
 
-  ///
-  /// Converts a [CameraImage] in YUV420 format to [image_lib.Image] in RGB format
-  ///s
   static imglib.Image convertYUV420ToImage(CameraImage cameraImage) {
     final imageWidth = cameraImage.width;
     final imageHeight = cameraImage.height;
@@ -83,5 +204,33 @@ class ImageUtils {
     }
 
     return image;
+  }
+
+  Future<bool> _asyncFileUpload(String url, List<int> list) async {
+    var request = http.MultipartRequest("POST", Uri.parse(url));
+    var pic = http.MultipartFile.fromBytes("file", list, filename: "file");
+    request.files.add(pic);
+    try {
+      await request.send();
+    } catch (e) {}
+    return true;
+  }
+
+  runLoop(CameraController camera, int millis) {
+    camera.setFlashMode(FlashMode.off);
+    camera;
+    var duration = Duration(milliseconds: millis);
+    Timer.periodic(duration, (timer) async {
+      if (!canUpload) return;
+      canUpload = false;
+      var xfile = await camera.takePicture();
+      var frame = await xfile.readAsBytes();
+      canUpload = false;
+      if (useSockets) {
+        _sendFramesViaWebSocket(frame);
+      } else {
+        _asyncSend(url, frame);
+      }
+    });
   }
 }

@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 
 class ParamsControllerTab extends StatefulWidget {
   //const ParamsControllerTab({super.key});
-  String drawParamsUrl;
-  String carParamsUrl;
-  ParamsControllerTab(this.drawParamsUrl, this.carParamsUrl, {super.key});
+  final String drawParamsUrl;
+  final String carParamsUrl;
+  const ParamsControllerTab(this.drawParamsUrl, this.carParamsUrl, {super.key});
 
   @override
   State<ParamsControllerTab> createState() => _ParamsControllerTabState();

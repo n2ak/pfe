@@ -3,9 +3,9 @@ import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 import 'package:car_security/vlc_player_with_controls.dart';
 
 class PlayerTab extends StatefulWidget {
-  String url;
-  Function toggleFullScreen;
-  PlayerTab(this.url, this.toggleFullScreen, {super.key});
+  final String url;
+  final Function toggleFullScreen;
+  const PlayerTab(this.url, this.toggleFullScreen, {super.key});
 
   @override
   _PlayerTabState createState() => _PlayerTabState();
@@ -13,7 +13,7 @@ class PlayerTab extends StatefulWidget {
 
 class _PlayerTabState extends State<PlayerTab> {
   static const _networkCachingMs = 2000;
-  static const _subtitlesFontSize = 30;
+  // static const _subtitlesFontSize = 30;
   static const _height = 400.0;
 
   late VlcPlayerController _controller;

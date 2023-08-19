@@ -6,10 +6,6 @@ import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 class ControlsOverlay extends StatefulWidget {
   static const double _playButtonIconSize = 80;
   static const double _replayButtonIconSize = 100;
-  static const double _seekButtonIconSize = 48;
-
-  static const Duration _seekStepForward = Duration(seconds: 10);
-  static const Duration _seekStepBackward = Duration(seconds: -10);
 
   static const Color _iconColor = Colors.white;
   final VlcPlayerController controller;
