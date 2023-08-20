@@ -168,6 +168,14 @@ def index():
 sockets = Sock(app)
 
 
+last = time.time()
+
+
+def decompress(data):
+    import gzip
+    return gzip.decompress(data)
+
+
 @sockets.route('/ws')
 def ws_endpoint(ws):
     global last, MAIN_PROGRAM
@@ -176,12 +184,13 @@ def ws_endpoint(ws):
             current = time.time()
             data = ws.receive()
             # data = process_bytes(data)
+            ws.send("can_send")
+            data = decompress(data)
             MAIN_PROGRAM.set_frame_from_bytes(data)
             print(1/(current - last), " fps")
             last = current
     except:
-        cv2.destroyAllWindows()
-        pass
+        print("Connection lost")
 
 
 def set_frame(frame):

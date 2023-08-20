@@ -27,6 +27,7 @@ class Program:
             drawer,
             systems_on=systems_on
         )
+        self._frame = None
 
     def stop(self):
         self.processor.stop()
@@ -97,3 +98,4 @@ class Program:
 
     def set_frame_from_bytes(self, bytes):
         self._frame = bytes_to_image(bytes)
+        print("New frame")

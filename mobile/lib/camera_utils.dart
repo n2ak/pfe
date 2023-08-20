@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
+import 'dart:io';
+import 'dart:convert';
 import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
 import 'dart:async';
@@ -9,6 +10,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import 'package:web_socket_channel/io.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class ImageUtils {
   String url;
@@ -24,7 +26,7 @@ class ImageUtils {
   bool canUpload = true;
   bool canProcess = true;
   //List<int>? image;
-  Uint8List? image;
+  List<int>? image;
 
   String imageToString(CameraImage image) {
     return json.encode(
@@ -51,11 +53,12 @@ class ImageUtils {
     });
   }
 
+  bool canSend = true;
   void send() {
     if (image == null) return;
-    print("Uploading length: ${image!.length}");
+    // print("Uploading length: ${image!.length}");
     if (useSockets) {
-      _sendFramesViaWebSocket(image);
+      _sendFramesViaWebSocket(image!);
     } else {
       _asyncSend(url, image!);
       // postRequest(image!);
@@ -70,17 +73,13 @@ class ImageUtils {
       int current = DateTime.now().millisecondsSinceEpoch;
       if ((current - last) < fpss) return;
       canProcess = false;
-      print("Processing");
       var list = withouDecode(image);
-      this.image = list;
-      canProcess = true;
-      print("Processed");
-      last = current;
+      compressFrame(list).then((frame) {
+        this.image = frame;
+        canProcess = true;
+        last = current;
+      });
     }
-    // if (this.image != null && canUpload) {
-    //   canUpload = false;
-    //   send();
-    // }
   }
 
   dispose() {
@@ -89,15 +88,49 @@ class ImageUtils {
 
   void resetSocket() {
     channel = IOWebSocketChannel.connect('ws://192.168.1.20:9999/ws');
+    channel!.stream.listen((event) {
+      print("new data : ${event}");
+      if (event == "can_send") {
+        canSend = true;
+      }
+    });
   }
 
-  Future<void> _sendFramesViaWebSocket(dynamic frame) async {
+  int sent = 0;
+  int minHeight = 640, minWidth = 384;
+  Future<List<int>> compressFrame(Uint8List frame,
+      {bool lowerQuality = false}) async {
+    print("Length 1 : ${frame.length}");
+    if (lowerQuality) {
+      try {
+        frame = await FlutterImageCompress.compressWithList(
+          frame,
+          minHeight: minHeight,
+          minWidth: minWidth,
+          quality: 96,
+          // rotate: 135,
+        );
+        print("Length 2 : ${frame.length}");
+      } catch (e) {}
+    }
+    frame = Uint8List.fromList(gzip.encode(frame));
+    print("Length 3 : ${frame.length}");
+    return frame;
+  }
+
+  Future<void> _sendFramesViaWebSocket(List<int> frame) async {
+    if (!canSend) return;
+    canSend = false;
     if (channel!.closeCode != null) {
       resetSocket();
+      sent = 0;
       return;
     }
     channel!.sink.add(frame);
-    print("Uploaded");
+
+    sent++;
+    print("Sent $sent, length: ${frame.length}");
+    // print("Uploaded");
     canUpload = true;
   }
 

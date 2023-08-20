@@ -20,11 +20,13 @@ class ObjectDetector:
         "car": 1.8,
         "truck": 2.5,
         "bus": 2.5,
+        "person": .3,
     }
 
     def __init__(self, params: ObjectDetectorParams, ratio=1, objects: List[str] = []) -> None:
-        self.objects_to_detect = ["car", "truck", "bus"]
+        self.objects_to_detect = ["car", "truck", "bus", "person"]
         self.objects_to_detect.extend(objects)
+
         # assert params.yolo_version in ["YOLOv5n.pt", "YOLOv8n.pt"]
         for o in self.objects_to_detect:
             assert o in self.OBJECTS_WIDTH.keys(), f"No width for {o}."
@@ -39,7 +41,7 @@ class ObjectDetector:
         self._ready = False
 
     def init(self, initial_frame):
-        print(type(initial_frame))
+        # print(type(initial_frame))
         h, w = initial_frame.shape[:2]
         self.params.FRAME_CENTER_Y = w//2
 
@@ -55,7 +57,7 @@ class ObjectDetector:
         return self.OBJECTS_WIDTH[type]
 
     def is_object_in_front(self, object: ObjectInfo):
-        # return True
+        return True
         x, y, w, h = object.coords
         center_y = int(x+w//2)
         offset = 100

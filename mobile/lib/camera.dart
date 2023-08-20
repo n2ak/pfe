@@ -25,11 +25,11 @@ class _CameraFeedState extends State<CameraFeed> {
   bool canSend = true;
   Image? image;
   CameraLensDirection _direction = CameraLensDirection.back;
-
+  bool useSockets = true;
   @override
   void initState() {
     super.initState();
-    imageUtils = ImageUtils(widget.url, true);
+    imageUtils = ImageUtils(widget.url, useSockets);
     _initializeCamera();
   }
 
@@ -80,6 +80,13 @@ class _CameraFeedState extends State<CameraFeed> {
   }
 
   @override
+  void dispose() {
+    _camera?.dispose();
+    imageUtils.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var w = (image == null ? const Text("No image") : image!);
     if (image == null) {}
@@ -92,6 +99,8 @@ class _CameraFeedState extends State<CameraFeed> {
             onPressed: () {
               _showToast("Re initializing");
               _camera!.dispose();
+              imageUtils.dispose();
+              imageUtils = ImageUtils(widget.url, useSockets);
               setState(() {
                 imageCount = 0;
                 uploadedCount = 0;

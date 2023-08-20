@@ -22,7 +22,6 @@ class DetectionWorker:
             if in_ is None:
                 break
             frame, params, ons = in_
-            print("ons", ons)
             for param, system, on in zip(params, self.systems, ons):
                 system.set_on(on)
                 system.get_param(False).update(param)
