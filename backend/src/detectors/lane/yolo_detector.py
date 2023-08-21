@@ -9,8 +9,8 @@ from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
     from src.drawer import DrawParams
 
-GREEN = np.array([0, 255, 0])/255
-RED = np.array([255, 0, 0])/255
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 
 
 class YoloLaneDetecor(LaneDetectorBase):
@@ -25,7 +25,7 @@ class YoloLaneDetecor(LaneDetectorBase):
 
         self._ready = False
         self.in_lane = True
-
+        self.pos = None
         self.params = params
 
     def init(self, initial_frame):
@@ -37,18 +37,28 @@ class YoloLaneDetecor(LaneDetectorBase):
         if not self._ready:
             return frame
 
-        left, right, ys, in_lane = self.left, self.right, self.ys, self.in_lane
+        left, right, ys = self.left, self.right, self.ys
         left = scale(left, w)
         right = scale(right, w)
         ys = scale(ys, h)
-        left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
+        left_lane, right_lane, height = left[-1], right[-1], ys[-1]
+        self.pos, in_lane = lane_departure_warning(
+            left_lane,
+            right_lane,
+            (self.params.CAR_CENTER),
+            self.params.LANE_THRESHOLD
+        )
+        self.in_lane = in_lane
         car_center, threshold = self.params.CAR_CENTER, self.params.LANE_THRESHOLD
         out = frame
-        step = 3
+        step = round(len(left) / draw_params.LANE_N_POINTS)
+        if step == 0:
+            step = len(left)
         if draw_params.RENDER_LANE:
             out = draw_lane_zone_transp(
                 out, left, right, ys, opacity=.30, step=step)
+            out = (out*255).astype(int)
         if draw_params.RENDER_LINES:
             out = draw_lines(out, left, right, ys, step=step,
                              line_color=(0, 0, 255))
@@ -62,10 +72,10 @@ class YoloLaneDetecor(LaneDetectorBase):
             hm = h - 50
             hb = h - 60
 
-            cv2.line(out, (ccr, hm), (ccl, hm), 0, 5)
-            cv2.line(out, (ccr, hb), (ccr, ht), 0, 5)
-            cv2.line(out, (ccl, hb), (ccl, ht), 0, 5)
-            cv2.circle(out, (car_center, hm), 7, 0, -1)
+            cv2.line(out, (ccr, hm), (ccl, hm), GREEN, 5)
+            cv2.line(out, (ccr, hb), (ccr, ht), GREEN, 5)
+            cv2.line(out, (ccl, hb), (ccl, ht), GREEN, 5)
+            cv2.circle(out, (car_center, hm), 7, GREEN, -1)
 
             c = GREEN if in_lane else RED
             cv2.circle(out, (lane_center, height), 10, c, -1)
@@ -98,20 +108,14 @@ class YoloLaneDetecor(LaneDetectorBase):
             right = fit(ys, right)
 
         H, W = res.masks.data[0].shape
+        # left_lane, right_lane, height = left[-1], right[-1], ys[-1]
         left = normalize(left, W)
         right = normalize(right, W)
         ys = normalize(ys, H)
 
-        left_lane, right_lane, height = left[-1], right[-1], ys[-1]
+        # left_lane, right_lane, height = left[-1], right[-1], ys[-1]
 
-        pos, self.in_lane = lane_departure_warning(
-            left_lane,
-            right_lane,
-            self.params.CAR_CENTER,
-            self.params.LANE_THRESHOLD
-        )
-
-        return left, right, ys, self.in_lane
+        return left, right, ys, None
 
     def is_in_lane(self):
         return self.in_lane
@@ -121,7 +125,7 @@ class YoloLaneDetecor(LaneDetectorBase):
         if data is None:
             self._ready = False
             return
-        self.left, self.right, self.ys, self.in_lane = data
+        self.left, self.right, self.ys, _ = data
 
     def is_safe(self):
         return self.in_lane
@@ -142,7 +146,7 @@ def normalize(var, by):
 
 
 def scale(var, to):
-    if isinstance(var, list):
+    if isinstance(var, (list, np.ndarray)):
         return [int(var[i]*to) for i in range(len(var))]
     return int(var*to)
 
@@ -157,12 +161,12 @@ def draw_lane_zone_transp(image, left, right, ys, opacity=.75, lane_color=(0, 1,
     return green
 
 
-def draw_lines(image, left, right, ys, step=5, line_color=(0, 0, 255)):
+def draw_lines(image, left, right, ys, step=5, line_color=(0, 0, 255), thickness=3):
     prev = None
     for r, l, y in list(zip(right, left, ys))[::step]:
         if prev is not None:
-            cv2.line(image, (l, y), prev[1], line_color, 1)
-            cv2.line(image, (r, y), prev[0], line_color, 1)
+            cv2.line(image, (l, y), prev[1], line_color, thickness=thickness)
+            cv2.line(image, (r, y), prev[0], line_color, thickness=thickness)
         prev = [r, y], [l, y]
     return image
 

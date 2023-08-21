@@ -1,6 +1,6 @@
 from typing import List, Union
 from src.adas import ADASystem
-from src.warning import Warner
+from src.warner import Warner
 from src.drawer import Drawer
 from src.workers import DetectionWorker
 from .processor_params import ProcessorParams
@@ -20,7 +20,7 @@ class Processor(Parameterizable):
         self.systems = systems
         self.warner = warner
         self.drawer = drawer
-        self.params = ProcessorParams(systems, False)
+        self.params = ProcessorParams(systems, systems_on)
         self.params.print()
 
     def init(self, initial_frame):
@@ -74,7 +74,7 @@ class Processor(Parameterizable):
         systems = self.systems
         drawer = self.drawer
 
-        entities: List[Parameterizable] = [self, *systems]
+        entities: List[Parameterizable] = [self, *systems, self.warner]
 
         if include_drawer:
             entities.append(drawer)

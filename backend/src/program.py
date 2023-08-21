@@ -43,7 +43,7 @@ class Program:
             if video is not None:
                 on, frame = read_video(video)
             else:
-                on, frame = True, self._frame
+                on, frame = True, self._frame.copy()
             return on, frame
         try:
             i = 0
@@ -74,6 +74,9 @@ class Program:
 
     def run(self,  frame_count, video=None):
         if video is not None:
+            while not Server.has_started():
+                print("Waiting for server to start..")
+                time.sleep(.5)
             on, frame = read_video(video)
             assert on is True
         else:
@@ -98,4 +101,4 @@ class Program:
 
     def set_frame_from_bytes(self, bytes):
         self._frame = bytes_to_image(bytes)
-        print("New frame")
+        # print("New frame")

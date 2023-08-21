@@ -8,7 +8,7 @@ from src.drawer import Drawer
 from src.detectors.lane import YoloLaneDetecorParams
 from src.detectors.objects import ObjectDetectorParams
 from src.drawer import DrawParams
-from src.warning import Warner
+from src.warner import Warner
 
 
 def init_params():
@@ -37,12 +37,13 @@ def main(
         ),
     ]
     drawer = Drawer(draw_params)
-    warner = Warner(use_sound=warn, log=log)
+    warner = Warner(
+        r"F:\Master\S4\main\backend\assets\Alarm-beeping-sound.wav")
     program = Program(
         systems,
         drawer,
         warner,
-        systems_on=False
+        systems_on=True
     )
     frame_count = 30
 

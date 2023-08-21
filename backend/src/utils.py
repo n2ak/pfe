@@ -167,7 +167,7 @@ def calibrate(
             # Draw and display the corners
             if show_chessboard:
                 cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
-                cv.imshow('img', scale(img, window_ratio))
+                cv.imshow('img', scale_img(img, window_ratio))
 
                 cv.waitKey()
     print(f"Using {len(objpoints)} points to calibrate the camera.")
@@ -431,7 +431,7 @@ def get_object_distance(
     """
     pixels_per_mm = f / focal_length
     # print(pixels_per_mm)
-    pixels_per_mm = round(pixels_per_mm / ratio)
+    pixels_per_mm = pixels_per_mm / ratio
     # print(pixels_per_mm)
     object_image_sensor = object_size_in_image / pixels_per_mm
     distance = object_size_in_real_world * focal_length / object_image_sensor
@@ -527,14 +527,14 @@ def canny(image, t1, t2):
     return cv2.Canny(image, t1, t2)
 
 
-def scale(frame, ratio=1, size=None):
+def scale_img(frame, ratio=1, size=None):
     if size is None:
         size = (int(frame.shape[1]//ratio), int(frame.shape[0]//ratio))
     return cv2.resize(frame, size)
 
 
 def show_window(name, image, ratio=1):
-    image = scale(image, ratio)
+    image = scale_img(image, ratio)
     cv2.imshow(name, image)
     return cv2.waitKey(1) & 0xFF == ord('q')
 

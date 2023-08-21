@@ -28,7 +28,8 @@ class ParamsBase:
         return value
 
     def get_porperty(self, name):
-        assert name in self.PARAMS.keys()
+        assert name in self.PARAMS.keys(
+        ), f"{name} not in {self.PARAMS.keys()}"
         return self.PARAMS[name]
 
     def update(self, PARAMS: dict):

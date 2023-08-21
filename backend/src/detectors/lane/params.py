@@ -7,16 +7,16 @@ def str2bool(v):
 
 
 _default_params: dict = {
-    "use_poly_fit": True,
-    "car_center": 120,
-    "lane_threshold": 100,
-    "weights": r".\backend\models\lane\train4\best.pt",
+    "Use np.fitpoly": True,
+    "Car_center": 120,
+    "Lane threshold": 100,
+    "Weights": r".\backend\models\lane\train4\best.pt",
 }
 _default_types: dict = {
-    "use_poly_fit": [str2bool],
-    "car_center": [float, int],
-    "lane_threshold": [float, int],
-    "weights": [str],
+    "Use np.fitpoly": [str2bool],
+    "Car_center": [float, int],
+    "Lane threshold": [float, int],
+    "Weights": [str],
 }
 
 
@@ -25,15 +25,17 @@ class YoloLaneDetecorParams(ParamsBase):
         super().__init__(params, types)
 
     @property
-    def USE_POLY_FIT(self): return self.get_porperty("use_poly_fit")
+    def USE_POLY_FIT(self): return self.get_porperty("Use np.fitpoly")
 
     @property
-    def CAR_CENTER(self): return self.get_porperty("car_center")
+    def CAR_CENTER(self): return self.get_porperty("Car_center")
     @CAR_CENTER.setter
-    def CAR_CENTER(self, value): return self.set("car_center", value)
+    def CAR_CENTER(self, value): return self.set("Car_center", value)
 
     @property
-    def LANE_THRESHOLD(self): return self.get_porperty("lane_threshold")
+    def LANE_THRESHOLD(self): return self.get_porperty("Lane threshold")
 
     @property
-    def WEIGHTS(self): return self.get_porperty("weights")
+    def WEIGHTS(self): return self.get_porperty("Weights")
+    @WEIGHTS.setter
+    def WEIGHTS(self, value): return self.set("Weights", value)

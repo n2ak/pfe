@@ -37,6 +37,10 @@ class ADASystem(abc.ABC, Parameterizable):
     def report(self):
         raise NotImplementedError(self)
 
+    @abc.abstractmethod
+    def ready(self):
+        raise NotImplementedError(self)
+
     def tick(self, frame):
         if not self._on:
             return None
@@ -48,6 +52,6 @@ class ADASystem(abc.ABC, Parameterizable):
         return self._draw(frame, draw_params)
 
     def is_safe(self):
-        if not self._on:
+        if not self._on:  # or not self.ready():
             return True
         return self._is_safe()

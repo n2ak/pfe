@@ -25,9 +25,12 @@ class LaneDepartureWarningSystem(ADASystem):
         return self.model._update(data)
 
     def report(self):
-        return ""
         text = f"""
-Lane Departure Warning System:
+        Lane Departure Warning System:
+            pos: {self.model.pos} > {self.model.params.LANE_THRESHOLD}
         """
 
         return text
+
+    def ready(self):
+        return self.model._ready

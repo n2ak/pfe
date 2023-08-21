@@ -13,6 +13,9 @@ class ForwardCollisionWarningSystem(ADASystem):
     def init(self, initial_frame):
         self.model.init(initial_frame)
 
+    def ready(self):
+        return self.model._ready
+
     def _tick(self, frame):
         return self.model.detect(frame)
 
@@ -30,18 +33,17 @@ class ForwardCollisionWarningSystem(ADASystem):
         if not len(near_objects):
             return ""
         data = [f"""
-        {object.type}:
-            distance: {object.distance}
+            {object.type}:
+                distance: {object.distance}
 """
-
                 for object in near_objects]
         data = '\n'.join(data)
         text = f"""
-Forward Collision Warning System:
-    Objects in front:
-    {
-        data
-    }        
+        Forward Collision Warning System:
+            Objects in front:
+            {
+                data
+            }        
         """
 
         return text

@@ -158,8 +158,18 @@ def vars():
     return dict(params=zip(names, params), str=str)
 
 
+def has_started():
+    global _started
+    return _started
+
+
+_started = False
+
+
 @app.route("/")
 def index():
+    global _started
+    _started = True
     # return the rendered template
     return render_template(r"index.html")
     return render_template_string(_dummy_page)

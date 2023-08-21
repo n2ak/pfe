@@ -7,16 +7,18 @@ def str2bool(v):
 
 
 _default_params = {
-    "renderLines": False,
-    "renderLane": False,
-    "renderCarBox": True,
-    "renderCenter": False,
+    "Render lines": True,
+    "Render lane": False,
+    "Render car box": True,
+    "Render car center": True,
+    "Lane: Number of points": 20,
 }
 _default_types: dict = {
-    "renderLines": [str2bool],
-    "renderLane": [str2bool],
-    "renderCarBox": [str2bool],
-    "renderCenter": [str2bool],
+    "Render lines": [str2bool],
+    "Render lane": [str2bool],
+    "Render car box": [str2bool],
+    "Render car center": [str2bool],
+    "Lane: Number of points": [float, int],
 }
 
 
@@ -25,21 +27,24 @@ class DrawParams(ParamsBase):
         super().__init__(params, types)
 
     @property
-    def RENDER_LINES(self): return self.get_porperty("renderLines")
+    def RENDER_LINES(self): return self.get_porperty("Render lines")
     @RENDER_LINES.setter
-    def RENDER_LINES(self, value): self.set("renderLines", value)
+    def RENDER_LINES(self, value): self.set("Render lines", value)
 
     @property
-    def RENDER_LANE(self): return self.get_porperty("renderLane")
+    def RENDER_LANE(self): return self.get_porperty("Render lane")
     @RENDER_LANE.setter
-    def RENDER_LANE(self, value): self.set("renderLane", value)
+    def RENDER_LANE(self, value): self.set("Render lane", value)
 
     @property
-    def RENDER_CAR_BOX(self): return self.get_porperty("renderCarBox")
+    def RENDER_CAR_BOX(self): return self.get_porperty("Render car box")
     @RENDER_CAR_BOX.setter
-    def RENDER_CAR_BOX(self, value): self.set("renderCarBox", value)
+    def RENDER_CAR_BOX(self, value): self.set("Render car box", value)
 
     @property
-    def RENDER_CENTER(self): return self.get_porperty("renderCenter")
+    def RENDER_CENTER(self): return self.get_porperty("Render car center")
     @RENDER_CENTER.setter
-    def RENDER_CENTER(self, value): self.set("renderCenter", value)
+    def RENDER_CENTER(self, value): self.set("Render car center", value)
+
+    @property
+    def LANE_N_POINTS(self): return self.get_porperty("Lane: Number of points")

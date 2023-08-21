@@ -20,7 +20,7 @@ class ObjectDetector:
         "car": 1.8,
         "truck": 2.5,
         "bus": 2.5,
-        "person": .3,
+        "person": .2,
     }
 
     def __init__(self, params: ObjectDetectorParams, ratio=1, objects: List[str] = []) -> None:
@@ -72,8 +72,8 @@ class ObjectDetector:
         (x, y, w, h), type = object.coords, object.type
         f = self.params.F
         real_width = self.estimated_object_width(type) * 1000
+        return get_object_distance(f, 4.74, w, real_width, 1)
         return get_object_distance2(f, w, real_width)
-        # return get_object_distance(f, 4.74, w, real_width, 1)
 
     def calculate_distances(self, objects):
         distances = []
