@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+// ignore: must_be_immutable
 class DrawParams extends StatefulWidget with Params {
   @override
   State<DrawParams> createState() => _DrawParamsState();

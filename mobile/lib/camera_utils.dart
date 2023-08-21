@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'dart:io';
-import 'dart:convert';
 import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
 import 'dart:async';
@@ -10,23 +9,26 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import 'package:web_socket_channel/io.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+// import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class ImageUtils {
   String url;
   IOWebSocketChannel? channel;
+  Function setState;
   bool useSockets;
-  ImageUtils(this.url, this.useSockets) {
+  bool canUpload = true;
+  bool canProcess = true;
+  List<int>? image;
+
+  int imageProcessed = 0;
+  int imageUploaded = 0;
+
+  ImageUtils(this.url, this.useSockets, this.setState) {
     if (useSockets) {
       resetSocket();
     }
     timer(fps);
   }
-
-  bool canUpload = true;
-  bool canProcess = true;
-  //List<int>? image;
-  List<int>? image;
 
   String imageToString(CameraImage image) {
     return json.encode(
@@ -65,6 +67,7 @@ class ImageUtils {
     }
   }
 
+  bool isOn = false;
   int last = DateTime.now().millisecondsSinceEpoch;
   int fps = 5;
   int fpss = (1000 / 5).round();
@@ -77,6 +80,9 @@ class ImageUtils {
       compressFrame(list).then((frame) {
         this.image = frame;
         canProcess = true;
+        setState(() {
+          imageProcessed += 1;
+        });
         last = current;
       });
     }
@@ -102,16 +108,16 @@ class ImageUtils {
       {bool lowerQuality = false}) async {
     print("Length 1 : ${frame.length}");
     if (lowerQuality) {
-      try {
-        frame = await FlutterImageCompress.compressWithList(
-          frame,
-          minHeight: minHeight,
-          minWidth: minWidth,
-          quality: 96,
-          // rotate: 135,
-        );
-        print("Length 2 : ${frame.length}");
-      } catch (e) {}
+      // try {
+      //   frame = await FlutterImageCompress.compressWithList(
+      //     frame,
+      //     minHeight: minHeight,
+      //     minWidth: minWidth,
+      //     quality: 96,
+      //     // rotate: 135,
+      //   );
+      //   print("Length 2 : ${frame.length}");
+      // } catch (e) {}
     }
     frame = Uint8List.fromList(gzip.encode(frame));
     print("Length 3 : ${frame.length}");
@@ -127,7 +133,9 @@ class ImageUtils {
       return;
     }
     channel!.sink.add(frame);
-
+    setState(() {
+      imageUploaded += 1;
+    });
     sent++;
     print("Sent $sent, length: ${frame.length}");
     // print("Uploaded");

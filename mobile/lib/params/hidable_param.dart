@@ -1,8 +1,7 @@
-import 'package:car_security/params/base.dart';
+// import 'package:car_security/params/base.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 
+// ignore: must_be_immutable
 class HidableParam extends StatefulWidget {
   String label;
   Widget child;
@@ -33,7 +32,7 @@ class HidableParamState extends State<HidableParam> {
           ? Icons.keyboard_arrow_up_sharp
           : Icons.keyboard_arrow_down_sharp),
     );
-    var inner = (widget.child as Params);
+    // var inner = (widget.child as Params);
     return Column(
       children: [
         Center(

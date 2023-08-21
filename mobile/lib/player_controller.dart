@@ -1,7 +1,7 @@
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
+// ignore: must_be_immutable
 class VideoPlayerController extends StatefulWidget {
   final String url;
   late VlcPlayerController controller;

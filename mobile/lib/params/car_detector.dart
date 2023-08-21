@@ -5,6 +5,7 @@ import 'dart:convert';
 
 typedef OnchangedFunc = VoidCallback Function(String);
 
+// ignore: must_be_immutable
 class CarDetectorParams extends StatefulWidget with Params {
   @override
   State<CarDetectorParams> createState() => _CarDetectorParamsState();
