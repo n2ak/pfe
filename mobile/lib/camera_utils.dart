@@ -93,7 +93,7 @@ class ImageUtils {
   }
 
   void resetSocket() {
-    channel = IOWebSocketChannel.connect('ws://192.168.1.20:9999/ws');
+    channel = IOWebSocketChannel.connect(url);
     channel!.stream.listen((event) {
       print("new data : ${event}");
       if (event == "can_send") {
