@@ -101,4 +101,3 @@ class Program:
 
     def set_frame_from_bytes(self, bytes):
         self._frame = bytes_to_image(bytes)
-        # print("New frame")

@@ -36,14 +36,16 @@
                                 <form action="">
                                     {% for k,v in param.PARAMS.items() %}
                                     {% set is_checkbox = (str(v).lower() in ['true','false']) %}
-                                    <div class="form-group">
-                                        <label for="{{k}}" class="mb-2"
-                                            style="width: 100%;text-align: center;">{{k}}</label>
-                                        <input id="{{k}}" class="form-control mb-2" placeholder="{{k}}"
+                                    <div class="input-group" style="width: 100%;margin-bottom: 10px;">
+                                        <!-- <label for="{{k}}" class="mb-2"
+                                            style="width: 100%;text-align: center;">{{k}}</label> -->
+                                        <label for="{{k}}" class="input-group-addon" style="width: 40%;">{{k}}</label>
+                                        <input id="{{k}}" class="form-control w-75" placeholder="{{k}}"
                                             type="{{ 'checkbox' if is_checkbox else 'text' }}" {{'checked="checked"' if (is_checkbox and str(v).lower() == "true") else ""
                                             }} 
                                             value="{{v}}" 
                                             name="{{k}}">
+                                        <br s>
                                     </div>
                                     {% endfor %}
                                     <input type="hidden" name="type" value="{{path}}">

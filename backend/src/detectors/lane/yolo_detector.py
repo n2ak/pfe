@@ -2,7 +2,7 @@ from __future__ import annotations
 from src.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
-from src.utils import draw_lane_zone, polynome
+from src.utils import draw_lane_zone, polynome, polynome_deg
 from src.detectors.lane import LaneDetectorBase
 from src.yolo import Yolo
 from typing import List, TYPE_CHECKING
@@ -30,7 +30,10 @@ class YoloLaneDetecor(LaneDetectorBase):
 
     def init(self, initial_frame):
         h, w = initial_frame.shape[:2]
+        offset = int(h * .8)
+
         self.params.CAR_CENTER = w//2
+        self.params.POLY_OFFSET = offset
 
     def draw(self, frame, draw_params: DrawParams):
         h, w = frame.shape[:2]
@@ -98,14 +101,21 @@ class YoloLaneDetecor(LaneDetectorBase):
             return None
 
         if self.params.USE_POLY_FIT:
-            def fit(ys, ind, deg=2):
+            deg = 2
+            ys = np.array(ys)
+            ys2 = ys
+            if self.params.USE_POLY_OFFSET:
+                ys2 = np.linspace(
+                    ys.min(), self.params.POLY_OFFSET, 50, dtype=int)
+
+            def fit(ind):
                 ind = np.polyfit(ys, ind, deg)
-                _, ind = polynome(ind, ys)
+                ind = polynome(ind, ys2)
                 ind = ind.astype(int)
                 return ind
-            ys = np.array(ys)
-            left = fit(ys, left)
-            right = fit(ys, right)
+            left = fit(left)
+            right = fit(right)
+            ys = ys2
 
         H, W = res.masks.data[0].shape
         # left_lane, right_lane, height = left[-1], right[-1], ys[-1]

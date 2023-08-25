@@ -37,7 +37,6 @@ class ObjectDetector:
         # assert os.path.exists("../yolov5") and os.path.isdir("../yolov5")
 
         self.params = params
-        print("Object", id(self.params))
         self._ready = False
 
     def init(self, initial_frame):

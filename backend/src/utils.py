@@ -379,14 +379,21 @@ def histogram_peaks(hist):
     return a, b
 
 
-def polynome(coeffs, y):
+def polynome_deg(coeffs, y, deg=2):
+    assert len(coeffs) == deg+1
+    xs = [y**d for d in range(deg,-1,-1)]
+    res =[c*x for c,x in zip(coeffs,xs)]
+    return np.array(res).sum(0)
+
+def polynome(coeffs, y,ret_curv_radius=False):
     A, B, C = coeffs
     res = A * y**2 + B * y + C
-    curvature = abs((2 * A) / (1 + (2 * A * y + B) ** 2) ** (3/2))
-    radius = 1 / curvature
-    radius = np.mean(radius)
-    return radius, res
-
+    if ret_curv_radius:
+        curvature = abs((2 * A) / (1 + (2 * A * y + B) ** 2) ** (3/2))
+        radius = 1 / curvature
+        radius = np.mean(radius)
+        return radius, res
+    return res
 
 def fit_poly_one_side(indices, ys, nonzero):
     nonzeroy, nonzerox = nonzero

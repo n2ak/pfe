@@ -154,7 +154,6 @@ def vars():
     params = MAIN_PROGRAM.get_params(include_drawer=True)
     params = params.items()
     names = [f'collapse{i}' for i in range(len(params))]
-    print(params)
     return dict(params=zip(names, params), str=str)
 
 

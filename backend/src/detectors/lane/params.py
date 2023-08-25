@@ -8,12 +8,16 @@ def str2bool(v):
 
 _default_params: dict = {
     "Use np.fitpoly": True,
+    "Use polynome offset": False,
+    "Polynome offset": 300,
     "Car_center": 120,
     "Lane threshold": 100,
     "Weights": r".\backend\models\lane\train4\best.pt",
 }
 _default_types: dict = {
     "Use np.fitpoly": [str2bool],
+    "Use polynome offset": [str2bool],
+    "Polynome offset": [float, int],
     "Car_center": [float, int],
     "Lane threshold": [float, int],
     "Weights": [str],
@@ -26,6 +30,14 @@ class YoloLaneDetecorParams(ParamsBase):
 
     @property
     def USE_POLY_FIT(self): return self.get_porperty("Use np.fitpoly")
+
+    @property
+    def USE_POLY_OFFSET(self): return self.get_porperty("Use polynome offset")
+
+    @property
+    def POLY_OFFSET(self): return self.get_porperty("Polynome offset")
+    @POLY_OFFSET.setter
+    def POLY_OFFSET(self, value): return self.set("Polynome offset", value)
 
     @property
     def CAR_CENTER(self): return self.get_porperty("Car_center")
