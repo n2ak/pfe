@@ -1,4 +1,5 @@
 import 'package:car_security/camera.dart';
+import 'package:car_security/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:car_security/main_app.dart';
@@ -47,27 +48,32 @@ class FirstPageState extends State<FirstPage> {
               ),
               const SizedBox(height: 30),
               gradientButton(() {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  var baseUrl = textEditController.text;
-                  var viodeFeedUrl = joinURL(baseUrl, "ws");
+                push((baseUrl) {
+                  var viodeFeedUrl = Utils.joinURL(baseUrl, "ws");
                   viodeFeedUrl = viodeFeedUrl.replaceFirst("http", "ws");
-                  print("Using url: $viodeFeedUrl");
                   return CameraFeed(viodeFeedUrl);
-                }));
+                });
               }, "Camera feed"),
               const SizedBox(height: 30),
               gradientButton(() {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  var baseUrl = textEditController.text;
-                  String carParamsUrl = joinURL(baseUrl, "params/objects");
-                  String drawParamsUrl = joinURL(baseUrl, "params/draw");
-                  String imageFeedUrl = joinURL(baseUrl, "params/image_feed");
-                  return MainApp(carParamsUrl, drawParamsUrl, imageFeedUrl);
-                }));
+                push((baseUrl) {
+                  String paramsUrl = Utils.joinURL(baseUrl, "all_params");
+                  String paramsBaseUrl = Utils.joinURL(baseUrl, "params/");
+                  String imageFeedUrl =
+                      Utils.joinURL(baseUrl, "params/image_feed");
+                  return MainApp(paramsUrl, paramsBaseUrl, imageFeedUrl);
+                });
               }, "Main App"),
             ],
           ),
         ));
+  }
+
+  void push(Function func) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      var baseUrl = textEditController.text;
+      return func(baseUrl);
+    }));
   }
 
   Widget gradientButton(onPressed, String title) {
@@ -100,11 +106,5 @@ class FirstPageState extends State<FirstPage> {
         ],
       ),
     );
-  }
-
-  String joinURL(String url, String suf) {
-    if (url.endsWith("/")) url = url.substring(0, url.length - 1);
-    if (suf.startsWith("/")) suf = url.substring(1, suf.length);
-    return "$url/$suf";
   }
 }

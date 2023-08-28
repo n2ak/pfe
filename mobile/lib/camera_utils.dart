@@ -95,7 +95,7 @@ class ImageUtils {
   void resetSocket() {
     channel = IOWebSocketChannel.connect(url);
     channel!.stream.listen((event) {
-      print("new data : ${event}");
+      // print("new data : ${event}");
       if (event == "can_send") {
         canSend = true;
       }
@@ -106,7 +106,7 @@ class ImageUtils {
   int minHeight = 640, minWidth = 384;
   Future<List<int>> compressFrame(Uint8List frame,
       {bool lowerQuality = false}) async {
-    print("Length 1 : ${frame.length}");
+    // print("Length 1 : ${frame.length}");
     if (lowerQuality) {
       // try {
       //   frame = await FlutterImageCompress.compressWithList(
@@ -120,7 +120,7 @@ class ImageUtils {
       // } catch (e) {}
     }
     frame = Uint8List.fromList(gzip.encode(frame));
-    print("Length 3 : ${frame.length}");
+    // print("Length 3 : ${frame.length}");
     return frame;
   }
 
@@ -137,29 +137,29 @@ class ImageUtils {
       imageUploaded += 1;
     });
     sent++;
-    print("Sent $sent, length: ${frame.length}");
+    // print("Sent $sent, length: ${frame.length}");
     // print("Uploaded");
     canUpload = true;
   }
 
   postRequest(Uint8List data) {
     // var body = json.encode(data);
-    print("url: $url");
+    // print("url: $url");
     try {
       var resp = http.post(Uri.parse(url),
           headers: {"Content-Type": "application/octet-stream"}, body: data);
       resp.then((response) {
-        String respText = "Params set successfully.";
+        // String respText = "Params set successfully.";
         if (response.statusCode != 200) {
           String msg = response.body;
-          respText = "Setting params was unsuccessful,Error: $msg";
+          // respText = "Setting params was unsuccessful,Error: $msg";
         }
-        print(respText);
+        // print(respText);
         canUpload = true;
       });
     } catch (e) {
-      print("***************Error**************");
-      print("Error: $e");
+      // print("***************Error**************");
+      // print("Error: $e");
     }
   }
 
@@ -168,9 +168,9 @@ class ImageUtils {
     try {
       await _asyncFileUpload(url, list);
       canUpload = true;
-      print("Uploaded to $url");
+      // print("Uploaded to $url");
     } catch (e) {
-      print(e);
+      // print(e);
     }
     // canSend = true;
   }

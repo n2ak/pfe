@@ -1,4 +1,4 @@
-from src.sound import Sound
+from .sound import Sound
 from src.adas import ADASystem
 from .params import WarnerParams
 from src.base.parameterizable import Parameterizable

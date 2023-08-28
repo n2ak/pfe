@@ -48,8 +48,8 @@ class _CameraFeedState extends State<CameraFeed> {
         imageFormatGroup: ImageFormatGroup.bgra8888,
       );
     } catch (e) {
-      print("*********ERROR***********");
-      print("${e.toString()}");
+      // print("*********ERROR***********");
+      // print("${e.toString()}");
     }
     // _camera.takePicture();
     print("__ Initliting");

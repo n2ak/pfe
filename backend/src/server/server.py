@@ -175,8 +175,6 @@ def index():
 
 
 sockets = Sock(app)
-
-
 last = time.time()
 
 

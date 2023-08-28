@@ -4,10 +4,10 @@ import 'package:car_security/params_controller_tab.dart';
 import 'package:car_security/player_tab.dart';
 
 class MainApp extends StatefulWidget {
-  final String carParamsUrl; // = "http://192.168.1.20:9999/params/car";
-  final String drawParamsUrl; // = "http://192.168.1.20:9999/params/draw";
+  final String paramsBaseUrl; // = "http://192.168.1.20:9999/params/car";
+  final String paramsUrl; // = "http://192.168.1.20:9999/params/draw";
   final String imageFeedUrl; // = "http://192.168.1.20:9999/image_feed";
-  const MainApp(this.carParamsUrl, this.drawParamsUrl, this.imageFeedUrl,
+  const MainApp(this.paramsUrl, this.paramsBaseUrl, this.imageFeedUrl,
       {super.key});
 
   @override
@@ -98,8 +98,8 @@ class MainAppState extends State<MainApp> {
               children: [
                 player,
                 ParamsControllerTab(
-                  widget.drawParamsUrl,
-                  widget.carParamsUrl,
+                  widget.paramsUrl,
+                  widget.paramsBaseUrl,
                 ),
               ],
             ),
