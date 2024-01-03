@@ -56,7 +56,7 @@ class ObjectDetector:
         return self.OBJECTS_WIDTH[type]
 
     def is_object_in_front(self, object: ObjectInfo):
-        return True
+        # return True
         x, y, w, h = object.coords
         center_y = int(x+w//2)
         offset = 100
@@ -124,8 +124,9 @@ class ObjectDetector:
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
                 distance = int(distance)
                 distance_type = self.distance_type(distance)
+                dist = f" - {(distance/1000):.1f}m\n{distance_type}"
                 draw_text_with_backgraound(
-                    frame, f"{name} - {(distance/1000):.1f}m \n{distance_type}", x, y)
+                    frame, f"{name}{dist}", x, y)
         return frame
 
     def distance_type(self, distance):

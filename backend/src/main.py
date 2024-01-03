@@ -8,7 +8,7 @@ from src.drawer import Drawer
 from src.detectors.lane import YoloLaneDetecorParams
 from src.detectors.objects import ObjectDetectorParams
 from src.drawer import DrawParams
-from src.warner import Warner
+from src.warner import Warner, WarnerParams
 
 
 def init_params():
@@ -25,20 +25,33 @@ def main(
         log=False,
         init_=init_params,
         video=None,
+        wav_file=None,
+        systems=None
 ):
     from src.server import Server
 
     objects_params, yolo_lane_params, draw_params = init_()
-
-    systems = [
-        ForwardCollisionWarningSystem(objects_params),
-        LaneDepartureWarningSystem(
-            yolo_lane_params
-        ),
-    ]
+    if systems is None:
+        systems = [
+            ForwardCollisionWarningSystem(objects_params),
+            LaneDepartureWarningSystem(
+                yolo_lane_params
+            ),
+        ]
     drawer = Drawer(draw_params)
+    # wav_file = wav_file or "./backend/assets/smartphone_vibrating_alarm_silent-7040 (mp3cut.net).wav"
+    wav_file = wav_file or "./backend/assets/Alarm-beeping-sound.wav"
+
+    import os
+    import sys
+    assert os.path.exists(wav_file), print(os.getcwd())
+    warnerParams = WarnerParams()
+    warnerParams.USE_LOG = False
+
     warner = Warner(
-        r"F:\Master\S4\main\backend\assets\Alarm-beeping-sound.wav")
+        wav_file,
+        warnerParams
+    )
     program = Program(
         systems,
         drawer,

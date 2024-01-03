@@ -16,7 +16,7 @@ class ParamsControllerTab extends StatefulWidget {
 }
 
 class _ParamsControllerTabState extends State<ParamsControllerTab> {
-  late Map<String, Map<String, String>> data;
+  Map<String, Map<String, String>>? data;
   @override
   void initState() {
     // TODO: implement initState
@@ -33,7 +33,7 @@ class _ParamsControllerTabState extends State<ParamsControllerTab> {
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
-    data.forEach((type, map) {
+    data!.forEach((type, map) {
       String url = Utils.joinURL(widget.paramsBaseUrl, type);
       children.add(HidableParam("$type params:", P(url, map)));
     });

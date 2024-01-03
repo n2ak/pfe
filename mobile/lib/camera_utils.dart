@@ -1,13 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'dart:io';
 import 'package:image/image.dart' as imglib;
 import 'package:camera/camera.dart';
 import 'dart:async';
-
 import 'package:http/http.dart' as http;
-
 import 'package:web_socket_channel/io.dart';
 // import 'package:flutter_image_compress/flutter_image_compress.dart';
 

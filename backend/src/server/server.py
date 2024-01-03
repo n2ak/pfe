@@ -142,6 +142,8 @@ def set_params(type: str):
 
 @app.route("/video_feed")
 def video_feed():
+    global _started
+    _started = True
     return Response(
         generate_frame_response(),
         mimetype="multipart/x-mixed-replace; boundary=frame"
@@ -162,7 +164,7 @@ def has_started():
     return _started
 
 
-_started = False
+_started = True
 
 
 @app.route("/")

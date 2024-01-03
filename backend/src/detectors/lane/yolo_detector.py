@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
 
 
 class YoloLaneDetecor(LaneDetectorBase):
@@ -64,7 +65,7 @@ class YoloLaneDetecor(LaneDetectorBase):
             out = (out*255).astype(int)
         if draw_params.RENDER_LINES:
             out = draw_lines(out, left, right, ys, step=step,
-                             line_color=(0, 0, 255))
+                             line_color=RED)
 
         if draw_params.RENDER_CENTER:
             lane_center = (left_lane + right_lane) // 2
@@ -75,13 +76,13 @@ class YoloLaneDetecor(LaneDetectorBase):
             hm = h - 50
             hb = h - 60
 
-            cv2.line(out, (ccr, hm), (ccl, hm), GREEN, 5)
-            cv2.line(out, (ccr, hb), (ccr, ht), GREEN, 5)
-            cv2.line(out, (ccl, hb), (ccl, ht), GREEN, 5)
-            cv2.circle(out, (car_center, hm), 7, GREEN, -1)
+            cv2.line(out, (ccr, hm), (ccl, hm), GREEN, 3)
+            cv2.line(out, (ccr, hb), (ccr, ht), GREEN, 3)
+            cv2.line(out, (ccl, hb), (ccl, ht), GREEN, 3)
+            cv2.circle(out, (car_center, hm), 5, GREEN, -1)
 
-            c = GREEN if in_lane else RED
-            cv2.circle(out, (lane_center, height), 10, c, -1)
+            c = GREEN if in_lane else BLUE
+            cv2.circle(out, (lane_center, height), 6, c, -1)
         return out
 
     def pipeline(self, frame):
@@ -221,7 +222,9 @@ def get_lines(data):
     maxes = []
     for i, d in enumerate(data):
         o = np.where(d != 0)
-        max_h, max_w = o[0].max(), o[1].max()
+        if len(o[1]) == 0:
+            continue
+        max_w = o[1].max()
         maxes.append([i, max_w])
         lines.append(o)
     maxes = sorted(maxes, key=(lambda m: m[1]))

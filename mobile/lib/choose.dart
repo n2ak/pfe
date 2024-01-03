@@ -17,7 +17,9 @@ class FirstPageState extends State<FirstPage> {
   @override
   void initState() {
     super.initState();
-    textEditController = TextEditingController(text: "http://127.0.0.1:9999/");
+    String _ = "http://192.168.98.202:9999/";
+    String __ = "http://127.0.0.1:9999/";
+    textEditController = TextEditingController(text: _);
     // baseUrl = "";
   }
 
@@ -59,8 +61,8 @@ class FirstPageState extends State<FirstPage> {
                 push((baseUrl) {
                   String paramsUrl = Utils.joinURL(baseUrl, "all_params");
                   String paramsBaseUrl = Utils.joinURL(baseUrl, "params/");
-                  String imageFeedUrl =
-                      Utils.joinURL(baseUrl, "params/image_feed");
+                  String imageFeedUrl = baseUrl +
+                      "video_feed"; //Utils.joinURL(baseUrl, "/image_feed");
                   return MainApp(paramsUrl, paramsBaseUrl, imageFeedUrl);
                 });
               }, "Main App"),

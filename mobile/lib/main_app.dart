@@ -15,7 +15,7 @@ class MainApp extends StatefulWidget {
 }
 
 class MainAppState extends State<MainApp> {
-  final String playerUrl = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+  // final String playerUrl = "https://media.w3.org/2010/05/sintel/trailer.mp4";
 
   @override
   void initState() {
@@ -77,7 +77,8 @@ class MainAppState extends State<MainApp> {
         var fullScreen = orientation == Orientation.landscape;
         // var func = fullScreen ? _forcePortrait : _forceLandscape;
         correctBars(fullScreen);
-        var player = PlayerTab(playerUrl, toggleFullScreen);
+        print("iamge feed: ${widget.imageFeedUrl}");
+        var player = PlayerTab(widget.imageFeedUrl, toggleFullScreen);
         return DefaultTabController(
           length: 2,
           child: Scaffold(

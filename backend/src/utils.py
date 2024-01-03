@@ -93,12 +93,17 @@ def equalize_hist(gray, thresh=150, type=cv2.THRESH_BINARY):
     return th
 
 
-def show_img(img, figsize=None, **kwargs):
+def show_img(img, figsize=None, ax=None,label=None, **kwargs):
     figsize = figsize or (5, 5)
-    plt.figure(figsize=figsize)
-    plt.imshow(img, **kwargs)
-    plt.axis('off')
-    plt.show()
+    if ax is None:
+        plt.figure(figsize=figsize)
+        plt.imshow(img, **kwargs)
+        if label is not None: plt.title(label=label)
+        plt.axis('off')
+        plt.show()
+    else:
+        ax.imshow(img, **kwargs)
+        ax.axis("off")
 
 
 def show_gray_img(img, **kwargs):
@@ -381,11 +386,12 @@ def histogram_peaks(hist):
 
 def polynome_deg(coeffs, y, deg=2):
     assert len(coeffs) == deg+1
-    xs = [y**d for d in range(deg,-1,-1)]
-    res =[c*x for c,x in zip(coeffs,xs)]
+    xs = [y**d for d in range(deg, -1, -1)]
+    res = [c*x for c, x in zip(coeffs, xs)]
     return np.array(res).sum(0)
 
-def polynome(coeffs, y,ret_curv_radius=False):
+
+def polynome(coeffs, y, ret_curv_radius=False):
     A, B, C = coeffs
     res = A * y**2 + B * y + C
     if ret_curv_radius:
@@ -394,6 +400,7 @@ def polynome(coeffs, y,ret_curv_radius=False):
         radius = np.mean(radius)
         return radius, res
     return res
+
 
 def fit_poly_one_side(indices, ys, nonzero):
     nonzeroy, nonzerox = nonzero
