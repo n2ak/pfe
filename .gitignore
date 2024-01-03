@@ -12,5 +12,4 @@ data
 **/*.ipynb
 backend/assets
 /backend/src/edge_detection.ipynb
-**/*_test.py
 edge_detection.ipynb
