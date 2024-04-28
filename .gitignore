@@ -13,3 +13,4 @@ data
 backend/assets
 /backend/src/edge_detection.ipynb
 edge_detection.ipynb
+models

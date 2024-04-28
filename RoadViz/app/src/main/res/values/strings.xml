@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">RoadViz</string>
+    <string name="start">Start</string>
+    <string name="choose_a_model_runner">Choose a model runner:</string>
+    <string name="stop_preview">Stop preview</string>
+    <string name="todo">TODO</string>
+</resources>
