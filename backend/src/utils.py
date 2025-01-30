@@ -8,6 +8,18 @@ import cv2
 cv = cv2
 
 
+def to_numpy(x) -> np.ndarray:
+    import torch
+    if isinstance(x, torch.Tensor):
+        return x.cpu().numpy()
+    elif isinstance(x, np.ndarray):
+        return x
+    elif isinstance(x, (list, tuple)):
+        return np.array(x)
+    else:
+        raise Exception(f"Invalid type {type(x)}")
+
+
 def circle_at(ee, p): cv2.circle(ee, p, 30, (255, 255, 255))
 
 
@@ -93,12 +105,13 @@ def equalize_hist(gray, thresh=150, type=cv2.THRESH_BINARY):
     return th
 
 
-def show_img(img, figsize=None, ax=None,label=None, **kwargs):
+def show_img(img, figsize=None, ax=None, label=None, **kwargs):
     figsize = figsize or (5, 5)
     if ax is None:
         plt.figure(figsize=figsize)
         plt.imshow(img, **kwargs)
-        if label is not None: plt.title(label=label)
+        if label is not None:
+            plt.title(label=label)
         plt.axis('off')
         plt.show()
     else:
@@ -551,6 +564,10 @@ def show_window(name, image, ratio=1):
     image = scale_img(image, ratio)
     cv2.imshow(name, image)
     return cv2.waitKey(1) & 0xFF == ord('q')
+
+
+def is_window_closed(window_name):
+    return cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) < 1
 
 
 # def put_text(frame, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=1, color=(100, 255, 0), **kwargs):

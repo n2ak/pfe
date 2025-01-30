@@ -1,116 +1,158 @@
 <html>
-
-<head>
+  <head>
     <title>Car security app</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <style>
+      button:disabled,
+      button[disabled] {
+        border: 1px solid #999999;
+        background-color: #cccccc;
+        color: #666666;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
 
-
-</head>
-
-<body>
+  <body>
     <div class="container">
+      <h1
+        class="bg-primary display-4"
+        style="
+          width: 100%;
+          text-align: center;
+          border-radius: 30px;
+          padding: 10px 0;
+          margin-bottom: 70px;
+        "
+      >
+        Car security app
+      </h1>
+      <button id="stopbtn" disabled>stop</button>
+      <div class="row">
+        <div class="col-xs-6">
+          <img
+            class="img-fluid"
+            style="height: auto; width: 100%; border: solid; border-radius: 5px"
+            src="{{ url_for('video_feed') }}"
+          />
+        </div>
+        <div class="col-xs-6">
+          <h3 class="text-center" style="margin-top: 0px">Parameters</h3>
+          <div id="accordion">
+            {% for name,(path,(type,param)) in params %}
+            <div class="card">
+              <div class="card-header" id="{{'headingOne'+name}}">
+                <h5 class="mb-0">
+                  <button
+                    class="btn btn-primary"
+                    style="width: 100%; border-radius: 100px"
+                    data-toggle="collapse"
+                    data-target="#{{name}}"
+                    aria-expanded="false"
+                    aria-controls="{{name}}"
+                  >
+                    {{type}}
+                  </button>
+                </h5>
+              </div>
 
-        <h1 class="bg-primary display-4"
-            style="width: 100%;text-align: center;border-radius: 30px;padding: 10px 0;margin-bottom: 70px;">
-            Car security app
-        </h1>
-        <div class="row">
-            <div class="col-xs-6">
-                <img class="img-fluid" style=" height: auto;width:100%;border: solid;border-radius: 5px;"
-                    src="{{ url_for('video_feed') }}">
-            </div>
-            <div class="col-xs-6">
-                <h3 class="text-center" style="margin-top: 0px;">Parameters</h3>
-                <div id="accordion">
-                    {% for name,(path,(type,param)) in params %}
-                    <div class="card">
-                        <div class="card-header" id="{{'headingOne'+name}}">
-                            <h5 class="mb-0">
-                                <button class="btn btn-primary" style="width: 100%;border-radius: 100px;"
-                                    data-toggle="collapse" data-target="#{{name}}" aria-expanded="false"
-                                    aria-controls="{{name}}">
-                                    {{type}}
-                                </button>
-                            </h5>
-                        </div>
-
-                        <div id="{{name}}" class="collapse" aria-labelledby="{{'headingOne'+name}}"
-                            data-parent="#accordion">
-                            <div class="card-body" style="text-align:center;">
-                                <form action="">
-                                    {% for k,v in param.PARAMS.items() %}
-                                    {% set is_checkbox = (str(v).lower() in ['true','false']) %}
-                                    <div class="input-group" style="width: 100%;margin-bottom: 10px;">
-                                        <!-- <label for="{{k}}" class="mb-2"
+              <div
+                id="{{name}}"
+                class="collapse"
+                aria-labelledby="{{'headingOne'+name}}"
+                data-parent="#accordion"
+              >
+                <div class="card-body" style="text-align: center">
+                  <form action="">
+                    {% for k,v in param.PARAMS.items() %} {% set is_checkbox =
+                    (str(v).lower() in ['true','false']) %}
+                    <div
+                      class="input-group"
+                      style="width: 100%; margin-bottom: 10px"
+                    >
+                      <!-- <label for="{{k}}" class="mb-2"
                                             style="width: 100%;text-align: center;">{{k}}</label> -->
-                                        <label for="{{k}}" class="input-group-addon" style="width: 40%;">{{k}}</label>
-                                        <input id="{{k}}" class="form-control w-75" placeholder="{{k}}"
-                                            type="{{ 'checkbox' if is_checkbox else 'text' }}" {{'checked="checked"' if (is_checkbox and str(v).lower() == "true") else ""
-                                            }} 
-                                            value="{{v}}" 
-                                            name="{{k}}">
-                                        <br s>
-                                    </div>
-                                    {% endfor %}
-                                    <input type="hidden" name="type" value="{{path}}">
-                                    <button type="submit" class="btn btn-success">Update</button>
-                                </form>
-                            </div>
-                        </div>
+                      <label
+                        for="{{k}}"
+                        class="input-group-addon"
+                        style="width: 40%"
+                        >{{k}}</label
+                      >
+                      <input id="{{k}}" class="form-control w-75"
+                      placeholder="{{k}}" type="{{ 'checkbox' if is_checkbox
+                      else 'text' }}" {{'checked="checked"' if (is_checkbox and
+                      str(v).lower() == "true") else "" }} value="{{v}}"
+                      name="{{k}}">
+                      <br s />
                     </div>
                     {% endfor %}
-
+                    <input type="hidden" name="type" value="{{path}}" />
+                    <button type="submit" class="btn btn-success">
+                      Update
+                    </button>
+                  </form>
                 </div>
+              </div>
             </div>
+            {% endfor %}
+          </div>
         </div>
+      </div>
 
-        <!-- <div id="accordion">
-            
+      <!-- <div id="accordion">
         </div> -->
     </div>
 
-
     <script>
-        function submit(event) {
-            event.preventDefault();
-            const target = $(event.target)
-            const inputs = target.find("input");
-            const val = {};
-            let type = "";
-            // console.log(inputs);
-            Array.from(inputs).forEach(e => {
-                if (e.getAttribute("type") === "hidden") {
-                    type = e.getAttribute("value");
-                    return;
-                }
-                function get_value(e) {
-                    if (e.getAttribute("type") === "checkbox") {
-                        const val = e.checked ? "True" : "False";
-                        return val
-                    }
-                    return e.value;
-                }
-                const key = e.getAttribute("name");
-                const value = get_value(e);
-                val[key] = value;
-            })
-            const body = JSON.stringify(val);
-            const url = "/params/" + type;
-            console.log({ url, val })
-            $.post(url, data = body, (data) => {
-                console.log({ data });
-            }).error(e => {
-                console.error(e);
-            });
-        }
-        $(window).on(' load', function () {
-            Array.from(document.getElementsByTagName("form")).forEach(element => {
-                element.addEventListener("submit", submit);
-            });
+      function submit(event) {
+        event.preventDefault();
+        const target = $(event.target);
+        const inputs = target.find("input");
+        const val = {};
+        let type = "";
+        // console.log(inputs);
+        Array.from(inputs).forEach((e) => {
+          if (e.getAttribute("type") === "hidden") {
+            type = e.getAttribute("value");
+            return;
+          }
+          function get_value(e) {
+            if (e.getAttribute("type") === "checkbox") {
+              const val = e.checked ? "True" : "False";
+              return val;
+            }
+            return e.value;
+          }
+          const key = e.getAttribute("name");
+          const value = get_value(e);
+          val[key] = value;
         });
-    </script>
-</body>
+        const body = JSON.stringify(val);
+        const url = "/params/" + type;
+        console.log({ url, val });
+        $.post(url, (data = body), (data) => {
+          console.log({ data });
+        }).error((e) => {
+          console.error(e);
+        });
+      }
+      $(window).on(" load", function () {
+        Array.from(document.getElementsByTagName("form")).forEach((element) => {
+          element.addEventListener("submit", submit);
+        });
 
+        $("#stopbtn").attr("disabled", false);
+        $("#stopbtn").on("click", async function (event) {
+          event.preventDefault();
+          await $.post("{{ url_for('stop') }}");
+          $("#stopbtn").attr("disabled", true);
+        });
+      });
+    </script>
+  </body>
 </html>

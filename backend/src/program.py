@@ -1,9 +1,8 @@
 # TODO : draw nothing when no lanes are detected for to many frames
 import time
 from src.utils import read_video, bytes_to_image
-from src.server import Server
 from src.processor import Processor
-
+from .visualizer import Visualizer
 
 MAX = 9_000_000
 
@@ -16,6 +15,7 @@ class Program:
         systems,
         drawer,
         warner,
+        visualizer: Visualizer,
         show_window=False,
         systems_on=False,
     ) -> None:
@@ -28,54 +28,59 @@ class Program:
             systems_on=systems_on
         )
         self._frame = None
+        self.visualizer = visualizer
+        self.visualizer.update_params(program=self)
 
     def stop(self):
         self.processor.stop()
+        self.visualizer.stop()
 
-    def show_main_window(self, frame, name="Main"):
-        from src.utils import show_window
-        return show_window(name, frame, ratio=1)
-
-    def _run(self,  frame_count, video=None):
-        self.processor.start()
-
+    def _run(self,  fps, video=None):
         def get_frame():
             if video is not None:
                 on, frame = read_video(video)
             else:
                 on, frame = True, self._frame.copy()
             return on, frame
-        try:
-            i = 0
-            while True:
-                i += 1
-                if i > MAX:
-                    print("="*10, f"${MAX} iters was reached.")
-                    import sys
-                    sys.exit()
-                    break
-                self.on, frame = get_frame()  # size=(640, 384))
-                if not self.on:
-                    break
-                self.processor.set_frame(frame)
-                result_frame = self.processor.tick(frame)
-                # frame = self.tick(frame)
-                if self.show_window and self.show_main_window(result_frame):
-                    break
+        import itertools
+        for i in itertools.count():
+            start = time.monotonic()
+            if i > MAX:
+                print("="*10, f"${MAX} iters was reached.")
+                import sys
+                sys.exit()
+                break
+            # get frame
+            self.on, frame = get_frame()  # size=(640, 384))
+            # if not self.on:
+            #     break
+            # process frame ?
+            # run systems
+            self.processor.set_frame(frame)
+            result_frame = self.processor.tick(frame)
+            # warn if needed
+            self.processor.warn_if_needed()
+            # show frame
+            self.visualizer.show(result_frame)
 
-                Server.set_frame(result_frame)
-                time.sleep(1/frame_count)
-        except KeyboardInterrupt:
-            pass
-        self.stop()
+            end = time.monotonic()
+            delta = end - start
+            if delta < (1/fps):
+                time.sleep(1/fps - delta)
+            stop = self.visualizer.should_stop()
+            if stop:
+                break
 
     def init(self, frame):
+        self.visualizer.start()
         self.processor.init(frame)
+        self.processor.start()
 
-    def run(self,  frame_count, video=None):
+    def run(self, fps, video=None):
+        print(f"{video=}")
         if video is not None:
-            while not Server.has_started():
-                print("Waiting for server to start..")
+            while not self.visualizer.is_ready():
+                print("Waiting for visualizer to start..")
                 time.sleep(.5)
             on, frame = read_video(video)
             assert on is True
@@ -84,17 +89,15 @@ class Program:
                 print("Waiting for first frame..")
                 time.sleep(.2)
             frame = self._frame
-        self.init(frame)
-        self._run(frame_count, video=video)
+        try:
+            self.init(frame)
+            self._run(fps, video=video)
+        except KeyboardInterrupt:
+            pass
+        self.stop()
 
-    def run_thread(self, func, args):
-        import threading
-        t = threading.Thread(target=func, args=args)
-        t.daemon = True
-        t.start()
-
-    def run_server(self, host, port, debug=True):
-        Server.run_server(host, port, self, debug=debug,)
+    # def run_server(self, host, port, debug=True):
+    #     Server.run_server(host, port, self, debug=debug,)
 
     def get_params(self, ret_types=True, include_drawer=False):
         return self.processor.get_params(ret_types=ret_types, include_drawer=include_drawer)

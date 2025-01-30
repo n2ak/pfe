@@ -13,12 +13,26 @@ class ADASystem(abc.ABC, Parameterizable):
     def set_on(self, val):
         self._on = val
 
-    @abc.abstractmethod
     def init(self, initial_frame):
+        name = self.name
+        self._init(initial_frame)
+        print(f"{name} has been initialized.")
+
+    def stop(self):
+        name = self.name
+        self._stop()
+        print(f"{name} has stopped.")
+
+    @abc.abstractmethod
+    def _init(self, frame):
         raise NotImplementedError(self)
 
     @abc.abstractmethod
     def _tick(self, frame):
+        raise NotImplementedError(self)
+
+    @abc.abstractmethod
+    def _stop(self, frame, draw_params):
         raise NotImplementedError(self)
 
     @abc.abstractmethod
@@ -41,10 +55,25 @@ class ADASystem(abc.ABC, Parameterizable):
     def ready(self):
         raise NotImplementedError(self)
 
+    @abc.abstractmethod
+    def _warmup(self):
+        raise NotImplementedError(self)
+
+    def warmup(self):
+        name = self.name
+        print(f"{name} is warming up...")
+        self._warmup()
+
     def tick(self, frame):
         if not self._on:
             return None
-        return self._tick(frame)
+        name = self.name
+        import time
+        s = time.monotonic()
+        res = self._tick(frame)
+        e = time.monotonic()
+        print(f"{name} took {e-s:.4f} secs")
+        return res
 
     def draw(self, frame, draw_params):
         if not self._on:
@@ -55,3 +84,6 @@ class ADASystem(abc.ABC, Parameterizable):
         if not self._on:  # or not self.ready():
             return True
         return self._is_safe()
+
+    def in_danger(self):
+        return not self.is_safe()

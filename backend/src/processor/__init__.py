@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 from src.adas import ADASystem
 from src.warner import Warner
 from src.drawer import Drawer
@@ -11,7 +11,7 @@ from src.base.params import ParamsBase
 class Processor(Parameterizable):
     def __init__(
         self,
-        systems: List[ADASystem],
+        systems: list[ADASystem],
         warner: Warner,
         drawer: Drawer,
         systems_on=False
@@ -53,15 +53,8 @@ class Processor(Parameterizable):
             datas = self.detectionWorker.q_out.get()
 
             assert len(datas) == len(self.systems)
-            warning_source = None
             for data, system in zip(datas, self.systems):
                 system.update_state(data)
-                if (warning_source is None) and (not system.is_safe()):
-                    warning_source = system
-            if warning_source is not None:
-                self.warner.warn(warning_source)
-            else:
-                self.warner.stop()
             self._worker_free = True
 
         frame = self.drawer.draw(
@@ -70,12 +63,24 @@ class Processor(Parameterizable):
         )
         return frame
 
+    def warn_if_needed(self):
+        if self.warner is not None:
+            in_danger = False
+            for s in self.systems:
+                in_danger = s.in_danger()
+                if in_danger:
+                    self.warner.warn(s)
+                    break
+            if not in_danger:
+                self.warner.stop()
+
     def get_params(self, ret_types=True, include_drawer=False) -> Union[list[ParamsBase], dict[str, list[ParamsBase]]]:
         systems = self.systems
         drawer = self.drawer
 
-        entities: List[Parameterizable] = [self, *systems, self.warner]
-
+        entities: list[Parameterizable] = [self, *systems]
+        if self.warner is not None:
+            entities += [self.warner]
         if include_drawer:
             entities.append(drawer)
         params = [e.get_param(ret_type=ret_types) for e in entities]

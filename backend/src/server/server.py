@@ -164,7 +164,20 @@ def has_started():
     return _started
 
 
-_started = True
+@app.post("/stop")
+def stop():
+    global _stopped
+    _stopped = True
+    return ""
+
+
+def has_stopped():
+    global _stopped
+    return _stopped
+
+
+_stopped = False
+_started = False
 
 
 @app.route("/")
@@ -211,6 +224,8 @@ def set_frame(frame):
 def run_server(host, port, program, debug=False):
     global MAIN_PROGRAM
     MAIN_PROGRAM = program
+    assert program is not None
+    print(f"Server starting on {host}:{port}")
     app.run(
         host=host,
         port=port,

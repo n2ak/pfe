@@ -12,7 +12,7 @@ _default_params: dict = {
     "Polynome offset": 300,
     "Car center": 120,
     "Lane threshold": 100,
-    "Weights": r".\backend\models\lane\train4\best.pt",
+    "Weights": r"./models/lane/train4/best.pt",
 }
 _default_types: dict = {
     "Use np.fitpoly": [str2bool],
