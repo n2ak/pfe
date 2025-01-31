@@ -1,6 +1,6 @@
 # TODO : draw nothing when no lanes are detected for to many frames
 import time
-from src.utils import read_video, bytes_to_image
+from src.utils import read_video
 from .processor import Processor
 from .visualizer import Visualizer
 
@@ -95,11 +95,5 @@ class Program:
             pass
         self.stop()
 
-    # def run_server(self, host, port, debug=True):
-    #     Server.run_server(host, port, self, debug=debug,)
-
     def get_params(self, ret_types=True, include_drawer=False):
         return self.processor.get_params(ret_types=ret_types, include_drawer=include_drawer)
-
-    def set_frame_from_bytes(self, bytes):
-        self._frame = bytes_to_image(bytes)

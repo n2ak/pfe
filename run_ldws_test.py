@@ -9,8 +9,8 @@ if __name__ == "__main__":
     from src.components.drawer import DrawParams
     from pathlib import Path
 
-    use_server = None
     url = None
+    use_server = False
     if use_server:
         url = "0.0.0.0:9999".split(":")
     video_file = sys.argv[1]

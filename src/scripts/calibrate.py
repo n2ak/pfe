@@ -1,9 +1,58 @@
 import numpy as np
 import cv2 as cv
 import pickle
-from src.utils import calibrate
 
 ################ FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #############################
+
+
+def calibrate(
+    images_path,
+    chessboardSize,
+    frameSize=None,
+    size_of_chessboard_squares_mm=20,
+    criteria=(cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001),
+    show_chessboard=False,
+    window_ratio=2,
+):
+
+    objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
+    objp[:, :2] = np.mgrid[0:chessboardSize[0],
+                           0:chessboardSize[1]].T.reshape(-1, 2)
+
+    objp = objp * size_of_chessboard_squares_mm
+
+    objpoints = []
+    imgpoints = []
+    import glob
+    images = glob.glob(images_path)
+    print(f"Found {len(images)} images")
+    import tqdm
+    for image in tqdm.tqdm(images):
+        img = cv.imread(image)
+        if frameSize is None:
+            h, w = img.shape[:2]
+            frameSize = w, h
+
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+        ret, corners = cv.findChessboardCorners(gray, chessboardSize, None)
+
+        if ret == True:
+
+            objpoints.append(objp)
+            corners2 = cv.cornerSubPix(
+                gray, corners, (11, 11), (-1, -1), criteria)
+            imgpoints.append(corners)
+
+            if show_chessboard:
+                cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
+                cv.imshow('img', scale_img(img, window_ratio))
+
+                cv.waitKey()
+    print(f"Using {len(objpoints)} points to calibrate the camera.")
+    ret = cv.calibrateCamera(objpoints, imgpoints, frameSize, None, None)
+    cv.destroyAllWindows()
+    return ret
 
 
 if __name__ == "__main__":

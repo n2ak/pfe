@@ -46,7 +46,7 @@ class CheckBox:
             cv2.line(img, (x + w, y), (x, y + h), (0, 0, 0), 5)
         else:
             color = (255, 255, 255)  # White for unchecked
-        from utils import draw_text_with_backgraound
+        from src.utils import draw_text_with_backgraound
         draw_text_with_backgraound(img, self.label, x + w + 5, y)
         cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
         return img
