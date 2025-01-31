@@ -1,27 +1,50 @@
-from __future__ import annotations
-from src.detectors.lane.params import YoloLaneDetecorParams
+from src.adas.detectors.lane.params import YoloLaneDetecorParams
 import numpy as np
 import cv2
-from src.utils import draw_lane_zone, polynome, polynome_deg
-from src.detectors.lane import LaneDetectorBase
-from src.yolo import Yolo
-from typing import List, TYPE_CHECKING
-if TYPE_CHECKING:
-    from src.drawer import DrawParams
+from src.utils import draw_lane_zone, polynome
+from src.base.lane_detector import LaneDetectorBase
+from src.components.drawer import DrawParams
 
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 
 
+class YoloModel:
+    def __init__(self, version: str, hub=True) -> None:
+        if hub is True:
+            version = version.lower()
+            self.model = load_yolo(version, "../")
+        else:
+            from ultralytics import YOLO
+            self.model = YOLO(version,)
+
+    def detect(self, frame, **kwargs):
+        return self.model(frame, **kwargs)
+
+    def predict(self, frame, verbose=False, **kwargs):
+        if isinstance(frame, str):
+            from src.utils import read_rgb
+            frame = read_rgb(frame)
+        result = self.model.predict(frame, verbose=verbose)
+        return result[0]
+
+
+def load_yolo(version: str, base=None):
+    import torch
+    if base is not None:
+        torch.hub.set_dir(base)
+    return torch.hub.load(f'ultralytics/{version}', f'{version}s')
+
+
 class YoloLaneDetecor(LaneDetectorBase):
 
     def __init__(
         self,
-        params=YoloLaneDetecorParams(),
+        params: YoloLaneDetecorParams,
     ) -> None:
         super().__init__()
-        self.model = Yolo(params.WEIGHTS, hub=False)
+        self.model = YoloModel(params.WEIGHTS.value(), hub=False)
         self.lane = None
 
         self._ready = False
@@ -33,10 +56,17 @@ class YoloLaneDetecor(LaneDetectorBase):
         h, w = initial_frame.shape[:2]
         offset = int(h * .8)
 
-        self.params.CAR_CENTER = w//2
-        self.params.POLY_OFFSET = offset
+        self.params.CAR_CENTER.set_value(w//2)
+        self.params.POLY_OFFSET.set_value(offset)
 
     def draw(self, frame, draw_params: DrawParams):
+        render_lines = draw_params.RENDER_LINES.value()
+        render_lane = draw_params.RENDER_LANE.value()
+        render_center = draw_params.RENDER_CENTER
+        car_center = self.params.CAR_CENTER.value()
+        lane_threshold = self.params.LANE_THRESHOLD.value()
+        line_n_points = draw_params.LANE_N_POINTS.value()
+
         h, w = frame.shape[:2]
         if not self._ready:
             return frame
@@ -50,28 +80,27 @@ class YoloLaneDetecor(LaneDetectorBase):
         self.pos, in_lane = lane_departure_warning(
             left_lane,
             right_lane,
-            (self.params.CAR_CENTER),
-            self.params.LANE_THRESHOLD
+            car_center,
+            lane_threshold,
         )
         self.in_lane = in_lane
-        car_center, threshold = self.params.CAR_CENTER, self.params.LANE_THRESHOLD
         out = frame
-        step = round(len(left) / draw_params.LANE_N_POINTS)
+        step = round(len(left) / line_n_points)
         if step == 0:
             step = len(left)
-        if draw_params.RENDER_LANE:
+        if render_lane:
             out = draw_lane_zone_transp(
                 out, left, right, ys, opacity=.30, step=step)
             out = (out*255).astype(int)
-        if draw_params.RENDER_LINES:
+        if render_lines:
             out = draw_lines(out, left, right, ys, step=step,
                              line_color=RED)
 
-        if draw_params.RENDER_CENTER:
+        if render_center:
             lane_center = (left_lane + right_lane) // 2
 
-            ccr = car_center+threshold
-            ccl = car_center-threshold
+            ccr = car_center+lane_threshold
+            ccl = car_center-lane_threshold
             ht = h - 40
             hm = h - 50
             hb = h - 60
@@ -86,6 +115,9 @@ class YoloLaneDetecor(LaneDetectorBase):
         return out
 
     def pipeline(self, frame):
+        use_poly_offset = self.params.USE_POLY_FIT.value()
+        use_poly_fit = self.params.USE_POLY_FIT.value()
+        poly_offset = self.params.POLY_OFFSET.value()
         res = self.model.predict(frame)
         if res.masks is None:
             return None
@@ -101,13 +133,13 @@ class YoloLaneDetecor(LaneDetectorBase):
         if len(left) == 0 or len(right) == 0:
             return None
 
-        if self.params.USE_POLY_FIT:
+        if use_poly_fit:
             deg = 2
             ys = np.array(ys)
             ys2 = ys
-            if self.params.USE_POLY_OFFSET:
+            if use_poly_offset:
                 ys2 = np.linspace(
-                    ys.min(), self.params.POLY_OFFSET, 50, dtype=int)
+                    ys.min(), poly_offset, 50, dtype=int)
 
             def fit(ind):
                 ind = np.polyfit(ys, ind, deg)

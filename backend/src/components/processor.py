@@ -1,11 +1,18 @@
-from typing import Union
 from src.adas import ADASystem
-from src.warner import Warner
-from src.drawer import Drawer
-from src.workers import DetectionWorker
-from .processor_params import ProcessorParams
+from .warner import Warner
+from .drawer import Drawer
+from .workers import DetectionWorker
 from src.base.parameterizable import Parameterizable
-from src.base.params import ParamsBase
+from src.base.params import ParamsBase, BooleanParam
+
+
+class ProcessorParams(ParamsBase):
+    def __init__(self, systems: list[ADASystem]) -> None:
+        params = [
+            BooleanParam(s.name, f"{s.name}", True)
+            for s in systems
+        ]
+        super().__init__(params)
 
 
 class Processor(Parameterizable):
@@ -14,14 +21,15 @@ class Processor(Parameterizable):
         systems: list[ADASystem],
         warner: Warner,
         drawer: Drawer,
-        systems_on=False
     ) -> None:
-        super().__init__("processor")
+        super().__init__(
+            "processor",
+            ProcessorParams(systems),
+        )
         self.systems = systems
         self.warner = warner
         self.drawer = drawer
-        self.params = ProcessorParams(systems, systems_on)
-        self.params.print()
+        # self.params.print()
 
     def init(self, initial_frame):
         for system in self.systems:
@@ -43,9 +51,8 @@ class Processor(Parameterizable):
 
     def tick(self, frame):
         if self._worker_free is True:
-            params = [system.get_param(ret_type=False).PARAMS
-                      for system in self.systems]
-            ons = [self.params.get_porperty(system.name)
+            params = [system.get_params() for system in self.systems]
+            ons = [self.params.get(system.name).value()
                    for system in self.systems]
             self.detectionWorker.q_in.put((frame, params, ons))
             self._worker_free = False
@@ -74,18 +81,5 @@ class Processor(Parameterizable):
             if not in_danger:
                 self.warner.stop()
 
-    def get_params(self, ret_types=True, include_drawer=False) -> Union[list[ParamsBase], dict[str, list[ParamsBase]]]:
-        systems = self.systems
-        drawer = self.drawer
-
-        entities: list[Parameterizable] = [self, *systems]
-        if self.warner is not None:
-            entities += [self.warner]
-        if include_drawer:
-            entities.append(drawer)
-        params = [e.get_param(ret_type=ret_types) for e in entities]
-        if ret_types:
-            params = dict(params)
-        return params
-
-    # def _update(self):
+    def all_parameterizables(self):
+        return [self.params, self.drawer.params] + [s.params for s in self.systems]

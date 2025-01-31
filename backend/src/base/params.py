@@ -1,37 +1,49 @@
+from typing_extensions import Self
+
+
+class ParamBase:
+    def __init__(self, name, desc, default_value):
+        self.name = name
+        self.desc = desc
+        self.__val = default_value
+
+    def value(self):
+        return self.__val
+
+    def set_value(self, v):
+        v = self.parse_value(v)
+        self.__val = v
+
+
 class ParamsBase:
-    def __init__(self, params: dict, types) -> None:
-        self.PARAMS = params
-        self.types = types
+    def __init__(self, params: list[ParamBase]) -> None:
+        self.inner = {p.name: p for p in params}
 
-    def update_from_json(self, data: dict):
-        for k in data.keys():
-            if k not in self.PARAMS.keys():
-                raise KeyError(
-                    f"${self.__class__.__name__} , Unknown key: {k}")
-            value = data[k]
-            value = self.parse(k, value)
-            self.PARAMS[k] = value
-        self.print()
+    @classmethod
+    def default(cls) -> Self:
+        return cls._default()
 
-    def print(self):
-        print(self.__class__.__name__)
-        import json
-        print(json.dumps(self.PARAMS, sort_keys=True, indent=4))
+    def get(self, name) -> ParamBase:
+        return self.inner[name]
 
-    def set(self, key, value):
-        value = self.parse(key, value)
-        self.PARAMS[key] = value
 
-    def parse(self, key, value):
-        for convert in self.types[key]:
-            value = convert(value)
-        return value
+class BooleanParam(ParamBase):
 
-    def get_porperty(self, name):
-        assert name in self.PARAMS.keys(
-        ), f"{name} not in {self.PARAMS.keys()}"
-        return self.PARAMS[name]
+    def parse_value(self, v):
+        return str2bool(v)
 
-    def update(self, PARAMS: dict):
-        assert sorted(self.PARAMS.keys()) == sorted(PARAMS.keys())
-        self.PARAMS = PARAMS
+
+def str2bool(v):
+    v = str(v)
+    return v.lower() in ("yes", "true", "t", "1")
+
+
+class IntParam(ParamBase):
+    max_val = 500
+
+    def parse_value(self, v):
+        return int(v)
+
+
+class StrParam(ParamBase):
+    pass

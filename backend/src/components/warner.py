@@ -1,11 +1,30 @@
-from .sound import Sound
+from src.sound import Sound
 from src.adas import ADASystem
-from .params import WarnerParams
 from src.base.parameterizable import Parameterizable
+from src.base.params import ParamsBase, BooleanParam
+
+
+class WarnerParams(ParamsBase):
+
+    @staticmethod
+    def _default():
+        params = [
+            BooleanParam("USE_SOUND", "", False),
+            BooleanParam("USE_LOG", "Draw lane", False),
+        ]
+        return WarnerParams(
+            params
+        )
+
+    @property
+    def USE_SOUND(self): return self.get("USE_SOUND")
+
+    @property
+    def USE_LOG(self): return self.get("USE_LOG")
 
 
 class Warner(Parameterizable):
-    def __init__(self, filepath, params=WarnerParams()) -> None:
+    def __init__(self, filepath, params: WarnerParams) -> None:
         super().__init__("warn")
         self.sound = Sound(filepath=filepath)
         self.params = params

@@ -26,7 +26,7 @@ class DetectionWorker:
                 frame, params, ons = in_
                 for param, system, on in zip(params, self.systems, ons):
                     system.set_on(on)
-                    system.get_param(False).update(param)
+                    # system.get_params().update(param)
                 datas = [system.tick(frame) for system in self.systems]
                 q_out.put(datas, block=False)
 

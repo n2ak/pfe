@@ -1,7 +1,7 @@
 # TODO : draw nothing when no lanes are detected for to many frames
 import time
 from src.utils import read_video, bytes_to_image
-from src.processor import Processor
+from .processor import Processor
 from .visualizer import Visualizer
 
 MAX = 9_000_000
@@ -25,11 +25,10 @@ class Program:
             systems,
             warner,
             drawer,
-            systems_on=systems_on
         )
         self._frame = None
         self.visualizer = visualizer
-        self.visualizer.update_params(program=self)
+        self.visualizer.update_kwargs(program=self)
 
     def stop(self):
         self.processor.stop()
@@ -72,11 +71,11 @@ class Program:
                 break
 
     def init(self, frame):
-        self.visualizer.start()
         self.processor.init(frame)
         self.processor.start()
 
     def run(self, fps, video=None):
+        self.visualizer.start()
         print(f"{video=}")
         if video is not None:
             while not self.visualizer.is_ready():

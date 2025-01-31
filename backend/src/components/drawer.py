@@ -1,18 +1,49 @@
 
 import time
 import numpy as np
-from .params import DrawParams
 from src.adas import ADASystem
 from typing import List
 from src.base.parameterizable import Parameterizable
+
+from src.base.params import ParamsBase, BooleanParam, IntParam
+
+
+class DrawParams(ParamsBase):
+
+    @staticmethod
+    def _default():
+        params = [
+            BooleanParam("RENDER_LINES", "Draw lines", True),
+            BooleanParam("RENDER_LANE", "Draw lane", True),
+            BooleanParam("RENDER_CENTER", "Draw center", True),
+            BooleanParam("RENDER_CAR_BOX", "Draw car box", True),
+            IntParam("LANE_N_POINTS", "Number of points in line.", 20),
+        ]
+        return DrawParams(
+            params
+        )
+
+    @property
+    def RENDER_LINES(self): return self.get("RENDER_LINES")
+
+    @property
+    def RENDER_LANE(self): return self.get("RENDER_LANE")
+
+    @property
+    def RENDER_CAR_BOX(self): return self.get("RENDER_CAR_BOX")
+
+    @property
+    def RENDER_CENTER(self): return self.get("RENDER_CENTER")
+
+    @property
+    def LANE_N_POINTS(self): return self.get("LANE_N_POINTS")
 
 
 class Drawer(Parameterizable):
     fps_ = [0]
 
     def __init__(self, params: DrawParams) -> None:
-        super().__init__("drawer")
-        self.params = params
+        super().__init__("drawer", params)
         self.prev_time = time.time()-1
 
     def draw(self, frame, systems: List[ADASystem]):

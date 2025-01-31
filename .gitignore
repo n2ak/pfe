@@ -8,7 +8,7 @@ ultralytics_yolov5_master
 data
 **/*.pt
 **/*.pickle
-**/train*
+**/train/*
 **/*.ipynb
 backend/assets
 /backend/src/edge_detection.ipynb

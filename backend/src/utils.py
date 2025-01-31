@@ -496,19 +496,15 @@ def combine(image, original, use_bitwise=True):
 def draw_lane_zone(image, xs, ys, step=1, color=(0, 255, 0), alpha=1, beta=0.5, gama=1.0, draw_lines=False):
     if len(xs[0]) != len(xs[1]) != len(ys):
         return image
-    right, left = xs
+    right, left = xs[0][::step], xs[1][::step]
+    ys = ys[::step]
     if len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        # show_img(image)
-    prev = None
-    for r, l, y in list(zip(right, left, ys))[::step]:
-        curr = [l, y], [r, y]
-        if prev is not None:
-            points = [np.array([*curr, *prev], dtype=np.int32)]
-            cv2.fillPoly(image, points, color)
-            # cv2.drawContours(image, points, -1, color, thickness=cv2.FILLED)
-        prev = [r, y], [l, y]
-
+    pointsl = np.column_stack((left, ys))
+    pointsr = np.column_stack((right, ys))
+    pointsr = pointsr[::-1]
+    points = np.row_stack((pointsl, pointsr)).astype(np.int32)
+    image = cv2.fillPoly(image, [points], color)
     return image
 
 

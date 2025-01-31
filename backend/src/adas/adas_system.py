@@ -1,12 +1,10 @@
 import abc
-from src.base.params import ParamsBase
-from .parameterizable import Parameterizable
-import typing
+from src.base.parameterizable import Parameterizable
 
 
 class ADASystem(abc.ABC, Parameterizable):
-    def __init__(self, path, name=None, is_on=True) -> None:
-        super().__init__(path, name)
+    def __init__(self, name, params, is_on=True) -> None:
+        super().__init__(name, params)
         self.model = None
         self._on = is_on
 

@@ -1,20 +1,13 @@
 from src.base.params import ParamsBase
-import typing
 
 
 class Parameterizable:
-    def __init__(self, path, name=None) -> None:
+    def __init__(self, name, params: ParamsBase) -> None:
         if name is None:
             name = self.__class__.__name__
-        self.path = path
+        assert issubclass(params.__class__, ParamsBase), params
+        self.params = params
         self.name = name
 
-    def get_param(self, ret_type) -> typing.Union[ParamsBase, typing.Tuple[str, ParamsBase]]:
-        try:
-            params = self.model.params
-        except:
-            params = self.params
-
-        if ret_type:
-            return self.path, (self.name, params)
-        return params
+    def get_params(self) -> ParamsBase:
+        return self.params
