@@ -10,7 +10,6 @@ data
 **/*.pickle
 **/train/*
 **/*.ipynb
-backend/assets
-/backend/src/edge_detection.ipynb
+assets
 edge_detection.ipynb
 models
