@@ -81,5 +81,9 @@ class Processor(Parameterizable):
             if not in_danger:
                 self.warner.stop()
 
-    def all_parameterizables(self):
-        return [self.params, self.drawer.params] + [s.params for s in self.systems]
+    def all_parameterizables(self, asdict=False):
+        l = [self.params, self.drawer.params] + \
+            [s.params for s in self.systems]
+        if not asdict:
+            return l
+        return {p.__class__.__name__: p for p in l}

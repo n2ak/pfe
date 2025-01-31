@@ -94,6 +94,3 @@ class Program:
         except KeyboardInterrupt:
             pass
         self.stop()
-
-    def get_params(self, ret_types=True, include_drawer=False):
-        return self.processor.get_params(ret_types=ret_types, include_drawer=include_drawer)

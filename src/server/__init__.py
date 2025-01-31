@@ -2,10 +2,7 @@ from __future__ import annotations
 from flask_sock import Sock
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from src.main import Program
-from src.detectors.objects import ObjectDetectorParams
-from src.detectors.lane import YoloLaneDetecorParams
-from src.drawer import DrawParams
+    from src.components.program import Program
 import cv2
 import threading
 import time
@@ -94,36 +91,19 @@ def generate_frame_response():
 
 def update(type, data):
     global MAIN_PROGRAM
-    params = MAIN_PROGRAM.get_params(include_drawer=True)
-    assert type in params.keys(), f"'{type}' not in {params.keys()}"
-    _, param = params[type]
-    print(param)
-    param.update_from_json(data)
+    params = MAIN_PROGRAM.processor.all_parameterizables(asdict=True)
+    assert type in params, f"'{type}' not in {params.keys()}"
+    params[type].update_from_json(data)
     print(f"Params for {type} are updated.")
 
 
 @app.get("/params/<type>")
 def get_params(type: str):
     raise ""
-    # type = type.lower()
-    # import json
-    # resp = Response()
-    # if type not in ["car", "draw"]:
-    #     resp.status_code = 400
-    #     resp.response = f"Invalid params type: {str(type)}"
-    #     return resp
-    # params = {
-    #     "car": objects_params.PARAMS,
-    #     "draw": draw_params.PARAMS
-    # }[type]
-    # resp.response = json.dumps(params)
-    # resp.status_code = 200
-    # return resp
 
 
 @app.post("/params/<type>")
 def set_params(type: str):
-    type = type.lower()
     data = request.get_json(force=True)  # .json
     print("Data", data)
     resp = Response()
@@ -153,10 +133,8 @@ def video_feed():
 @app.context_processor
 def vars():
     global MAIN_PROGRAM
-    params = MAIN_PROGRAM.get_params(include_drawer=True)
-    params = params.items()
-    names = [f'collapse{i}' for i in range(len(params))]
-    return dict(params=zip(names, params), str=str)
+    params = MAIN_PROGRAM.processor.all_parameterizables(asdict=True)
+    return dict(params=params, str=str, type=type)
 
 
 def has_started():
@@ -209,7 +187,6 @@ def ws_endpoint(ws):
             ws.send("can_send")
             data = decompress(data)
             MAIN_PROGRAM.set_frame_from_bytes(data)
-            print(1/(current - last), " fps")
             last = current
     except:
         print("Connection lost")

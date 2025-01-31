@@ -10,7 +10,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     url = None
-    use_server = False
+    use_server = True
     if use_server:
         url = "0.0.0.0:9999".split(":")
     video_file = sys.argv[1]

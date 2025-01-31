@@ -44,7 +44,7 @@
         <div class="col-xs-6">
           <h3 class="text-center" style="margin-top: 0px">Parameters</h3>
           <div id="accordion">
-            {% for name,(path,(type,param)) in params %}
+            {% for name,param in params.items() %}
             <div class="card">
               <div class="card-header" id="{{'headingOne'+name}}">
                 <h5 class="mb-0">
@@ -56,7 +56,7 @@
                     aria-expanded="false"
                     aria-controls="{{name}}"
                   >
-                    {{type}}
+                    {{name}}
                   </button>
                 </h5>
               </div>
@@ -69,8 +69,7 @@
               >
                 <div class="card-body" style="text-align: center">
                   <form action="">
-                    {% for k,v in param.PARAMS.items() %} {% set is_checkbox =
-                    (str(v).lower() in ['true','false']) %}
+                    {% for k,v in param.inner.items() %}
                     <div
                       class="input-group"
                       style="width: 100%; margin-bottom: 10px"
@@ -84,14 +83,14 @@
                         >{{k}}</label
                       >
                       <input id="{{k}}" class="form-control w-75"
-                      placeholder="{{k}}" type="{{ 'checkbox' if is_checkbox
-                      else 'text' }}" {{'checked="checked"' if (is_checkbox and
-                      str(v).lower() == "true") else "" }} value="{{v}}"
-                      name="{{k}}">
+                      placeholder="{{k}}" type="{{ 'checkbox' if v.is_boolean()
+                      else 'text' }}" {{'checked="checked"' if (v.is_boolean()
+                      and v.value()) else "" }} value="{{v.value()}}"
+                      name="{{k}}" />
                       <br s />
                     </div>
                     {% endfor %}
-                    <input type="hidden" name="type" value="{{path}}" />
+                    <input type="hidden" name="type" value="{{name}}" />
                     <button type="submit" class="btn btn-success">
                       Update
                     </button>
@@ -115,7 +114,6 @@
         const inputs = target.find("input");
         const val = {};
         let type = "";
-        // console.log(inputs);
         Array.from(inputs).forEach((e) => {
           if (e.getAttribute("type") === "hidden") {
             type = e.getAttribute("value");
@@ -135,13 +133,13 @@
         const body = JSON.stringify(val);
         const url = "/params/" + type;
         console.log({ url, val });
-        $.post(url, (data = body), (data) => {
+        $.post(url, body, (data) => {
           console.log({ data });
         }).error((e) => {
           console.error(e);
         });
       }
-      $(window).on(" load", function () {
+      $(window).on("load", function () {
         Array.from(document.getElementsByTagName("form")).forEach((element) => {
           element.addEventListener("submit", submit);
         });
